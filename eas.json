@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 7.1.2"
+  },
+  "build": {
+    "develop": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "develop",
+      "env": {
+        "EXPO_PUBLIC_BASE_URL": "192.168.0.116"
+      }
+    },
+    "staging": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BASE_URL": "192.168.0.116"
+      },
+      "channel": "staging"
+    },
+    "production": {
+      "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

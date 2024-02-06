@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "nasakh",
+    "name": "Nasakh",
     "slug": "nasakh",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,7 +16,10 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -28,7 +31,8 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.FOREGROUND_SERVICE"
       ],
-      "package": "com.nasakh.nasakh"
+      "package": "com.nasakh.nasakh",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "bundler": "metro",
@@ -48,6 +52,20 @@
         {
           "RNMapboxMapsDownloadToken": "sk.eyJ1IjoiaHZtaWRyZXhhIiwiYSI6ImNsczdpNDF1ajF0OWQycHBidzNtZXZ6MWYifQ.GYEPGzNZKObjtpwRRtxNTQ"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      [
+        "expo-updates",
+        {
+          "username": "hamidrezabor"
+        }
       ]
     ],
     "experiments": {
@@ -61,6 +79,9 @@
         "projectId": "65194aa2-e6ca-47ba-8604-7e3a9bb13d76"
       }
     },
-    "owner": "nasakh"
+    "owner": "nasakh",
+    "updates": {
+      "url": "https://u.expo.dev/65194aa2-e6ca-47ba-8604-7e3a9bb13d76"
+    }
   }
 }
