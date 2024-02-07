@@ -8,7 +8,7 @@
       "distribution": "internal",
       "channel": "develop",
       "env": {
-        "EXPO_PUBLIC_BASE_URL": "192.168.0.116"
+        "EXPO_PUBLIC_BASE_UR": "192.168.0.116"
       }
     },
     "staging": {
@@ -16,7 +16,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_BASE_URL": "192.168.0.116"
+        "EXPO_PUBLIC_BASE_URL": "103.75.198.89"
       },
       "channel": "staging"
     },

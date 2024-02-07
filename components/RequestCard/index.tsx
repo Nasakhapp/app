@@ -141,9 +141,7 @@ export default function RequestCard({
                 borderColor="$error500"
                 borderStyle="solid"
                 borderWidth={1}
-                onPress={() => {
-                  onReject?.();
-                }}
+                onPress={onReject}
                 backgroundColor="$white"
               >
                 <Text color="$error500" fontFamily="Vazirmatn_500Medium">

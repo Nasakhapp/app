@@ -32,7 +32,11 @@ import { IRequest } from "@/types";
 import socket from "@/lib/socket";
 import axios from "axios";
 import axiosInstance from "@/lib/Instance";
-import { RequestContext, UserContext } from "@/components/Contexts/Contexts";
+import {
+  RequestContext,
+  RequestsContext,
+  UserContext,
+} from "@/components/Contexts/Contexts";
 import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 
 export default function HomePage() {
@@ -41,7 +45,7 @@ export default function HomePage() {
   const slider = createRef<Carousel<any>>();
   const { activeRequest, setActiveRequest } = useContext(RequestContext);
   const [location, setLocation] = useState<Position>([]);
-  const [requests, setRequests] = useState<IRequest[]>([]);
+  const { requests, setRequests } = useContext(RequestsContext);
   const { setUser, user } = useContext(UserContext);
   const [amount, setAmount] = useState<number>(0);
   const [open, setOpen] = useState<boolean>(false);
@@ -51,51 +55,39 @@ export default function HomePage() {
     Location.getCurrentPositionAsync({}).then((resp) => {
       setLocation([resp.coords.longitude, resp.coords.latitude]);
     });
-    socket.on("add-nasakh", (request: IRequest) => {
-      if (!requests.includes(request) && request.nasakh.id !== user?.id)
-        setRequests([request, ...requests]);
-    });
-
-    socket.on("remove-nasakh", (request: { id: string }) => {
-      const newRequests = requests.filter((item) => item.id !== request.id);
-      setRequests(newRequests);
-    });
   }, []);
+
   useEffect(() => {
-    if (activeRequest?.role === "NAJI" && activeRequest.request)
+    if (
+      activeRequest?.role === "NAJI" &&
+      activeRequest.request &&
+      activeRequest.request.status === "BRINGING"
+    )
       socket.emit(activeRequest.request?.id, location);
   }, [location, activeRequest]);
 
   useEffect(() => {
-    if (activeRequest?.role === "NASAKH" && activeRequest.request) {
+    if (
+      activeRequest?.role === "NASAKH" &&
+      activeRequest.request &&
+      activeRequest.request.status === "BRINGING"
+    ) {
       socket.on(activeRequest.request.id, (newNajiLocation: Position) => {
         setNajiLocation(newNajiLocation);
       });
-    }
-  }, [activeRequest]);
-
-  useEffect(() => {
-    if (user?.token) {
-      Location.getCurrentPositionAsync({}).then((resp) => {
-        axiosInstance
-          .get(
-            `/near-nasakhs?lat=${resp.coords.latitude}&long=${resp.coords.longitude}`,
-            { headers: { Authorization: "Bearer " + user.token } }
-          )
-          .then((data) => {
-            setRequests(data.data);
-          });
+    } else if (
+      activeRequest?.role === "NASAKH" &&
+      activeRequest.request &&
+      activeRequest.request.status !== "BRINGING"
+    )
+      socket.off(activeRequest.request.id, (newNajiLocation: Position) => {
+        setNajiLocation(newNajiLocation);
       });
-    }
-    if (user?.id) {
-      socket.on(
-        user?.id || "",
-        (data: { request?: IRequest; role?: "NAJI" | "NASAKH" }) => {
-          setActiveRequest?.(data);
-        }
-      );
-    }
-  }, [user]);
+
+    return () => {
+      socket.off(activeRequest?.request?.id);
+    };
+  }, [activeRequest]);
 
   useEffect(() => {
     if (activeRequest?.request)
@@ -111,8 +103,19 @@ export default function HomePage() {
           40,
           1000
         );
+      else if (
+        activeRequest?.role === "NASAKH" &&
+        activeRequest.request.status === "SEARCHING"
+      )
+        camera.current?.setCamera({
+          zoomLevel: 16,
+          centerCoordinate: location,
+          animationDuration: 2000,
+          animationMode: "flyTo",
+        });
   }, [activeRequest?.role, location, najiLocation]);
 
+  if (!user?.token) return <Spinner />;
   return (
     <View width={"100%"} height={"100%"} position="relative">
       <MapView
@@ -124,7 +127,7 @@ export default function HomePage() {
         style={{ flex: 1 }}
       >
         {!activeRequest?.request ? (
-          requests.map((item) => (
+          requests?.map((item) => (
             <PointAnnotation
               coordinate={[item.long || 0, item.lat || 0]}
               key={`marker-${item.id}`}
@@ -229,7 +232,7 @@ export default function HomePage() {
               onSnapToItem={(index) => setFocus(index)}
               sliderWidth={Dimensions.get("screen").width}
               itemWidth={Dimensions.get("screen").width * 0.7}
-              data={requests}
+              data={requests || []}
               ref={slider}
               renderItem={({ item }) => (
                 <RequestCard
@@ -292,7 +295,7 @@ export default function HomePage() {
                     },
                   }
                 )
-                .then(() => {
+                .then((data) => {
                   setAmount(0);
                   setOpen(false);
                 })

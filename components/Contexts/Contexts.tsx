@@ -18,3 +18,8 @@ export const RequestContext = createContext<{
     }>
   >;
 }>({});
+
+export const RequestsContext = createContext<{
+  requests?: IRequest[];
+  setRequests?: React.Dispatch<React.SetStateAction<IRequest[]>>;
+}>({});

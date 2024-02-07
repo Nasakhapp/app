@@ -8,7 +8,7 @@ import { Button, GluestackUIProvider, Text, View } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config"; // Optional if you want to use default theme
 import * as Location from "expo-location";
 import Mapbox from "@rnmapbox/maps";
-
+import io from "socket.io-client";
 import {
   Vazirmatn_100Thin,
   Vazirmatn_200ExtraLight,
@@ -22,10 +22,14 @@ import {
 } from "@expo-google-fonts/vazirmatn";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axiosInstance from "@/lib/Instance";
-import { RequestContext, UserContext } from "@/components/Contexts/Contexts";
+import {
+  RequestContext,
+  RequestsContext,
+  UserContext,
+} from "@/components/Contexts/Contexts";
 import { IRequest, IUser } from "@/types";
-import socket from "@/lib/socket";
 import * as Updates from "expo-updates";
+import socket from "@/lib/socket";
 Mapbox.setAccessToken(
   "pk.eyJ1IjoiaHZtaWRyZXhhIiwiYSI6ImNsaHBhNHlnOTA1MHQzaW9iODhyMzFmNzkifQ.V_8EC5aNqfIqzM4pACfXlw"
 );
@@ -43,6 +47,9 @@ export default function HomeLayout() {
   });
   const [locationPermission, setLocationPermission] = useState<boolean>(false);
   const [user, setUser] = useState<IUser>({});
+  const [requests, setRequests] = useState<IRequest[]>([]);
+  const [isConnected, setConnected] = useState<boolean>(false);
+
   const [activeRequest, setActiveRequest] = useState<{
     request?: IRequest;
     role?: "NAJI" | "NASAKH";
@@ -58,7 +65,6 @@ export default function HomeLayout() {
       }
     } catch (error) {
       // You can also add an alert() to see the error message in case of an error when fetching updates.
-      alert(`Error fetching latest Expo update: ${error}`);
     }
   }
   useEffect(() => {
@@ -82,13 +88,13 @@ export default function HomeLayout() {
                 setUser({ ...data.data, token });
                 if (data.data.UserAsNajiRequests.length > 0) {
                   setActiveRequest({
-                    request: data.data.UserAsNajiRequests[0],
+                    request: data.data.UserAsNajiRequests?.[0],
                     role: "NAJI",
                   });
                 }
                 if (data.data.UserAsNasakhRequests.length > 0) {
                   setActiveRequest({
-                    request: data.data.UserAsNasakhRequests[0],
+                    request: data.data.UserAsNasakhRequests?.[0],
                     role: "NASAKH",
                   });
                 }
@@ -97,10 +103,74 @@ export default function HomeLayout() {
         });
       });
     });
+    return () => {
+      socket.disconnect();
+      socket.removeAllListeners();
+    };
   }, []);
+  useEffect(() => {
+    if (user.token)
+      Location.getCurrentPositionAsync({}).then((resp) => {
+        axiosInstance
+          .get(
+            `/near-nasakhs?lat=${resp.coords.latitude}&long=${resp.coords.longitude}`,
+            { headers: { Authorization: "Bearer " + user.token } }
+          )
+          .then((data) => {
+            setRequests(data.data);
+          })
+          .catch((err) => console.log(err));
+      });
+  }, [user]);
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("connect");
+      setConnected(true);
+    });
+    socket.on("disconnect", (reason) => {
+      console.log(reason);
+      socket.connect();
+    });
+  }, [socket]);
+
+  useEffect(() => {
+    socket.on("add-nasakh", (request: IRequest) => {
+      if (!requests.includes(request) && request.nasakh.id !== user?.id) {
+        setRequests([request, ...requests]);
+      }
+    });
+    socket.on("remove-nasakh", ({ id }: { id: string }) => {
+      const newRequests = requests.filter((item) => item.id !== id);
+      setRequests(newRequests);
+    });
+
+    return () => {
+      socket.off("remove-nasakh");
+      socket.off("add-nasakh");
+    };
+  }, [requests]);
+
+  useEffect(() => {
+    socket.on(
+      user.id || "",
+      (data: { request?: IRequest; role?: "NAJI" | "NASAKH" }) => {
+        console.log(data);
+        setActiveRequest?.(data);
+      }
+    );
+
+    return () => {
+      socket.off(user.id);
+    };
+  }, [user, activeRequest]);
 
   const onLayoutRootView = useCallback(async () => {
-    if (locationPermission && (fontsLoaded || fontError) && user.token) {
+    if (
+      locationPermission &&
+      (fontsLoaded || fontError) &&
+      user.token &&
+      isConnected
+    ) {
       await SplashScreen.hideAsync();
     }
   }, [fontsLoaded, fontError, locationPermission, user.token]);
@@ -112,22 +182,24 @@ export default function HomeLayout() {
   return (
     <UserContext.Provider value={{ user, setUser }}>
       <RequestContext.Provider value={{ activeRequest, setActiveRequest }}>
-        <GluestackUIProvider config={config}>
-          <View width={"100%"} height={"100%"} onLayout={onLayoutRootView}>
-            <Stack
-              screenOptions={{
-                headerTitleAlign: "left",
-                headerTitle: () => <LogoIcon width={70} height={9} />,
-                headerBackground: () => null,
-                headerRight: () => (
-                  <Text fontFamily="Vazirmatn_700Bold">نام: {user.name}</Text>
-                ),
-              }}
-            >
-              <Stack.Screen name="index" />
-            </Stack>
-          </View>
-        </GluestackUIProvider>
+        <RequestsContext.Provider value={{ requests, setRequests }}>
+          <GluestackUIProvider config={config}>
+            <View width={"100%"} height={"100%"} onLayout={onLayoutRootView}>
+              <Stack
+                screenOptions={{
+                  headerTitleAlign: "left",
+                  headerTitle: () => <LogoIcon width={70} height={9} />,
+                  headerBackground: () => null,
+                  headerRight: () => (
+                    <Text fontFamily="Vazirmatn_700Bold">نام: {user.name}</Text>
+                  ),
+                }}
+              >
+                <Stack.Screen name="index" />
+              </Stack>
+            </View>
+          </GluestackUIProvider>
+        </RequestsContext.Provider>
       </RequestContext.Provider>
     </UserContext.Provider>
   );
