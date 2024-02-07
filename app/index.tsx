@@ -115,7 +115,7 @@ export default function HomePage() {
         activeRequest?.role === "NASAKH" &&
         activeRequest.request.status === "BRINGING"
       )
-        camera.current?.fitBounds(najiLocation, location, 40);
+        camera.current?.fitBounds(najiLocation, location, 500);
       else if (activeRequest?.role === "NAJI")
         camera.current?.fitBounds(
           location,
