@@ -255,7 +255,7 @@ export default function HomePage() {
                 onSnapToItem={(index) => setFocus(index)}
                 sliderWidth={Dimensions.get("screen").width}
                 itemWidth={Dimensions.get("screen").width * 0.7}
-                data={request}
+                data={requests}
                 ref={slider}
                 renderItem={({ item }) => (
                   <RequestCard
