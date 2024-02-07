@@ -40,7 +40,7 @@ import {
 import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 
 export default function HomePage() {
-  const [focus, setFocus] = useState<number>();
+  const [focus, setFocus] = useState<number>(0);
   const camera = createRef<CameraRef>();
   const slider = createRef<Carousel<any>>();
   const { activeRequest, setActiveRequest } = useContext(RequestContext);
@@ -56,6 +56,16 @@ export default function HomePage() {
       setLocation([resp.coords.longitude, resp.coords.latitude]);
     });
   }, []);
+
+  useEffect(() => {
+    if (requests && requests[focus])
+      camera.current?.setCamera({
+        zoomLevel: 16,
+        centerCoordinate: [requests?.[focus].long, requests?.[focus].lat],
+        animationDuration: 2000,
+        animationMode: "flyTo",
+      });
+  }, [focus]);
 
   useEffect(() => {
     if (
@@ -115,7 +125,19 @@ export default function HomePage() {
         });
   }, [activeRequest?.role, location, najiLocation]);
 
-  if (!user?.token) return <Spinner />;
+  if (!user?.token)
+    return (
+      <View
+        width={"100%"}
+        height={"100%"}
+        position="relative"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Spinner />
+      </View>
+    );
   return (
     <View width={"100%"} height={"100%"} position="relative">
       <MapView
@@ -228,25 +250,33 @@ export default function HomePage() {
             >
               نسخ های نزدیک شما:
             </Text>
-            <Carousel
-              onSnapToItem={(index) => setFocus(index)}
-              sliderWidth={Dimensions.get("screen").width}
-              itemWidth={Dimensions.get("screen").width * 0.7}
-              data={requests || []}
-              ref={slider}
-              renderItem={({ item }) => (
-                <RequestCard
-                  item={item}
-                  location={location}
-                  onAccept={() => {
-                    axiosInstance.get(`/request/${item.id}/accept`, {
-                      headers: { Authorization: "Bearer " + user?.token },
-                    });
-                  }}
-                  accepted={false}
-                />
-              )}
-            />
+            {requests?.length && requests?.length > 0 ? (
+              <Carousel
+                onSnapToItem={(index) => setFocus(index)}
+                sliderWidth={Dimensions.get("screen").width}
+                itemWidth={Dimensions.get("screen").width * 0.7}
+                data={request}
+                ref={slider}
+                renderItem={({ item }) => (
+                  <RequestCard
+                    item={item}
+                    location={location}
+                    onAccept={() => {
+                      axiosInstance.get(`/request/${item.id}/accept`, {
+                        headers: { Authorization: "Bearer " + user?.token },
+                      });
+                    }}
+                    accepted={false}
+                  />
+                )}
+              />
+            ) : (
+              <Card width={Dimensions.get("screen").width * 0.7} height={100}>
+                <Text fontFamily="Vazirmatn_500Medium">
+                  اون ورا انگار هیچکی نسخ نیست
+                </Text>
+              </Card>
+            )}
           </>
         )}
       </View>

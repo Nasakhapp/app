@@ -65,7 +65,7 @@ export default function RequestCard({
                 backgroundColor="$success500"
               >
                 <Text color="$white" fontFamily="Vazirmatn_500Medium">
-                  به سوی نسخ
+                  رفع نسخی
                 </Text>
               </Button>
               <Button
