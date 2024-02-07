@@ -212,7 +212,7 @@ export default function HomePage() {
           backgroundColor={"$black"}
           onPress={() => setOpen(true)}
         >
-          <FontAwesome6 name="hand-scissors" size={24} color="#fff" />
+          <FontAwesome6 name="hand-holding" size={24} color="#fff" />
         </Button>
       ) : null}
       <View
