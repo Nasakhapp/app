@@ -83,7 +83,10 @@ export default function HomePage() {
       activeRequest.request &&
       activeRequest.request.status === "BRINGING"
     ) {
-      socket.emit(activeRequest.request?.id, location);
+      socket.emit("naji-location", {
+        requestId: activeRequest.request.id,
+        location,
+      });
     }
   }, [location, activeRequest]);
 
