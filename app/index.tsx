@@ -58,6 +58,16 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    if (!activeRequest?.role) {
+      camera.current?.setCamera({
+        centerCoordinate: [location[0], location[1]],
+        animationDuration: 1000,
+        zoomLevel: 16,
+      });
+    }
+  }, [location, activeRequest]);
+
+  useEffect(() => {
     if (requests && requests[focus])
       camera.current?.setCamera({
         zoomLevel: 16,
@@ -72,8 +82,9 @@ export default function HomePage() {
       activeRequest?.role === "NAJI" &&
       activeRequest.request &&
       activeRequest.request.status === "BRINGING"
-    )
+    ) {
       socket.emit(activeRequest.request?.id, location);
+    }
   }, [location, activeRequest]);
 
   useEffect(() => {
@@ -93,11 +104,7 @@ export default function HomePage() {
       socket.off(activeRequest.request.id, (newNajiLocation: Position) => {
         setNajiLocation(newNajiLocation);
       });
-
-    return () => {
-      socket.off(activeRequest?.request?.id);
-    };
-  }, [activeRequest]);
+  }, [najiLocation, activeRequest]);
 
   useEffect(() => {
     if (activeRequest?.request)
@@ -271,9 +278,15 @@ export default function HomePage() {
                 )}
               />
             ) : (
-              <Card width={Dimensions.get("screen").width * 0.7} height={100}>
-                <Text fontFamily="Vazirmatn_500Medium">
-                  اون ورا انگار هیچکی نسخ نیست
+              <Card
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                width={Dimensions.get("screen").width * 0.7}
+                height={100}
+              >
+                <Text fontSize={12} fontFamily="Vazirmatn_500Medium">
+                  اون ورا انگار هیچکی نسخ نیست!
                 </Text>
               </Card>
             )}

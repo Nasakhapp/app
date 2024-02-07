@@ -124,11 +124,9 @@ export default function HomeLayout() {
   }, [user]);
   useEffect(() => {
     socket.on("connect", () => {
-      console.log("connect");
       setConnected(true);
     });
     socket.on("disconnect", (reason) => {
-      console.log(reason);
       socket.connect();
     });
   }, [socket]);
@@ -154,7 +152,6 @@ export default function HomeLayout() {
     socket.on(
       user.id || "",
       (data: { request?: IRequest; role?: "NAJI" | "NASAKH" }) => {
-        console.log(data);
         setActiveRequest?.(data);
       }
     );
