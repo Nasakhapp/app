@@ -20,9 +20,7 @@
           "NSAllowsArbitraryLoads": true
         }
       },
-      "runtimeVersion": {
-        "policy": "appVersion"
-      },
+      "runtimeVersion": "1.0.0",
       "bundleIdentifier": "com.nasakh.nasakh"
     },
     "android": {
