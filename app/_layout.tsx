@@ -33,9 +33,56 @@ import * as Updates from "expo-updates";
 import socket from "@/lib/socket";
 import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 import measure from "@/lib/LatLongDistance";
+import { Platform } from "react-native";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
 Mapbox.setAccessToken(
   "pk.eyJ1IjoiaHZtaWRyZXhhIiwiYSI6ImNsaHBhNHlnOTA1MHQzaW9iODhyMzFmNzkifQ.V_8EC5aNqfIqzM4pACfXlw"
 );
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  if (Platform.OS === "android") {
+    Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#FF231F7C",
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== "granted") {
+      alert("Failed to get push token for push notification!");
+      return;
+    }
+    token = await Notifications.getExpoPushTokenAsync({
+      projectId: Constants.expoConfig?.extra?.eas.projectId,
+    });
+    console.log(token);
+  } else {
+    alert("Must use physical device for Push Notifications");
+  }
+
+  return token?.data;
+}
 
 export default function HomeLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -53,6 +100,7 @@ export default function HomeLayout() {
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
+  const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
 
   const [activeRequest, setActiveRequest] = useState<{
     request?: IRequest;
@@ -72,41 +120,54 @@ export default function HomeLayout() {
     }
   }
   useEffect(() => {
-    onFetchUpdateAsync().then(() => {
-      Location.requestForegroundPermissionsAsync().then((data) => {
-        setLocationPermission(data.status === "granted");
-        if (data.status !== "granted") return;
-        AsyncStorage.getItem("token").then((token) => {
-          if (!token) {
-            axiosInstance.get("/new-user").then((data) => {
-              const user = data.data;
-              AsyncStorage.setItem("token", user.token);
-              setUser(user);
-            });
-          } else {
-            axiosInstance
-              .get("/me", {
-                headers: { Authorization: "Bearer " + token },
-              })
-              .then((data) => {
-                setUser({ ...data.data, token });
-                if (data.data.UserAsNajiRequests.length > 0) {
-                  setActiveRequest({
-                    request: data.data.UserAsNajiRequests?.[0],
-                    role: "NAJI",
-                  });
-                }
-                if (data.data.UserAsNasakhRequests.length > 0) {
-                  setActiveRequest({
-                    request: data.data.UserAsNasakhRequests?.[0],
-                    role: "NASAKH",
-                  });
-                }
+    registerForPushNotificationsAsync().then((pushToken) => {
+      setExpoPushToken(pushToken);
+      onFetchUpdateAsync().then(() => {
+        Location.requestForegroundPermissionsAsync().then((data) => {
+          setLocationPermission(data.status === "granted");
+          if (data.status !== "granted") return;
+          AsyncStorage.getItem("token").then((token) => {
+            if (!token) {
+              axiosInstance.get("/new-user").then((data) => {
+                const user = data.data;
+                AsyncStorage.setItem("token", user.token);
+                setUser(user);
               });
-          }
+            } else {
+              axiosInstance
+                .get("/me", {
+                  headers: { Authorization: "Bearer " + token },
+                })
+                .then((data) => {
+                  setUser({ ...data.data, token });
+                  if (data.data.UserAsNajiRequests.length > 0) {
+                    setActiveRequest({
+                      request: data.data.UserAsNajiRequests?.[0],
+                      role: "NAJI",
+                    });
+                  }
+                  if (data.data.UserAsNasakhRequests.length > 0) {
+                    setActiveRequest({
+                      request: data.data.UserAsNasakhRequests?.[0],
+                      role: "NASAKH",
+                    });
+                  }
+                });
+            }
+            axiosInstance.patch(
+              "push-token",
+              { pushToken },
+              {
+                headers: {
+                  Authorization: "Bearer " + token,
+                },
+              }
+            );
+          });
         });
       });
     });
+
     return () => {
       socket.disconnect();
       socket.removeAllListeners();
@@ -177,7 +238,8 @@ export default function HomeLayout() {
       (fontsLoaded || fontError) &&
       user.token &&
       isConnected &&
-      location
+      location &&
+      expoPushToken
     ) {
       await SplashScreen.hideAsync();
     }
