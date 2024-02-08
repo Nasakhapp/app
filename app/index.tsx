@@ -1,9 +1,17 @@
 import {
   Button,
   Card,
+  CloseIcon,
+  Icon,
   Input,
   InputField,
   Modal,
+  ModalBackdrop,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   ScrollView,
   Spinner,
   Text,
@@ -33,6 +41,7 @@ import socket from "@/lib/socket";
 import axios from "axios";
 import axiosInstance from "@/lib/Instance";
 import {
+  LocationContext,
   RequestContext,
   RequestsContext,
   UserContext,
@@ -40,11 +49,11 @@ import {
 import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 
 export default function HomePage() {
-  const [focus, setFocus] = useState<number>(0);
+  const [focus, setFocus] = useState<number>();
   const camera = createRef<CameraRef>();
   const slider = createRef<Carousel<any>>();
   const { activeRequest, setActiveRequest } = useContext(RequestContext);
-  const [location, setLocation] = useState<Position>([]);
+  const { location, setLocation } = useContext(LocationContext);
   const { requests, setRequests } = useContext(RequestsContext);
   const { setUser, user } = useContext(UserContext);
   const [amount, setAmount] = useState<number>(0);
@@ -52,23 +61,17 @@ export default function HomePage() {
   const [najiLocation, setNajiLocation] = useState<Position>([0, 0]);
 
   useEffect(() => {
-    Location.getCurrentPositionAsync({}).then((resp) => {
-      setLocation([resp.coords.longitude, resp.coords.latitude]);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!activeRequest?.role) {
+    if (!activeRequest?.role && location && !focus) {
       camera.current?.setCamera({
         centerCoordinate: [location[0], location[1]],
         animationDuration: 1000,
         zoomLevel: 16,
       });
     }
-  }, [location, activeRequest]);
+  }, [activeRequest, location]);
 
   useEffect(() => {
-    if (requests && requests[focus])
+    if (focus && requests && requests[focus])
       camera.current?.setCamera({
         zoomLevel: 16,
         centerCoordinate: [requests?.[focus].long, requests?.[focus].lat],
@@ -113,10 +116,11 @@ export default function HomePage() {
     if (activeRequest?.request)
       if (
         activeRequest?.role === "NASAKH" &&
-        activeRequest.request.status === "BRINGING"
+        activeRequest.request.status === "BRINGING" &&
+        location
       )
-        camera.current?.fitBounds(najiLocation, location, 500);
-      else if (activeRequest?.role === "NAJI")
+        camera.current?.fitBounds(najiLocation, location, 60, 500);
+      else if (activeRequest?.role === "NAJI" && location)
         camera.current?.fitBounds(
           location,
           [activeRequest?.request?.long, activeRequest?.request?.lat],
@@ -196,7 +200,7 @@ export default function HomePage() {
         ) : null}
         <UserLocation
           onUpdate={(newLocation) =>
-            setLocation([
+            setLocation?.([
               newLocation.coords.longitude,
               newLocation.coords.latitude,
             ])
@@ -212,7 +216,12 @@ export default function HomePage() {
           backgroundColor={"$black"}
           onPress={() => setOpen(true)}
         >
-          <FontAwesome6 name="hand-holding" size={24} color="#fff" />
+          <FontAwesome6
+            name="hand-holding"
+            size={24}
+            color="#fff"
+            style={{ marginTop: -12 }}
+          />
         </Button>
       ) : null}
       <View
@@ -227,6 +236,7 @@ export default function HomePage() {
             accepted={activeRequest.role === "NAJI"}
             item={activeRequest.request!}
             location={location}
+            najiLocation={najiLocation}
             role={activeRequest.role}
             onDone={() => {
               axiosInstance.get(`/request/${activeRequest.request?.id}/done`, {
@@ -267,7 +277,7 @@ export default function HomePage() {
                 itemWidth={Dimensions.get("screen").width * 0.7}
                 data={requests}
                 ref={slider}
-                renderItem={({ item }) => (
+                renderItem={({ item, index }) => (
                   <RequestCard
                     item={item}
                     location={location}
@@ -296,64 +306,63 @@ export default function HomePage() {
           </>
         )}
       </View>
-      <Modal
-        backgroundColor="#000000aa"
-        onClose={() => setOpen(false)}
-        isOpen={open}
-        closeOnOverlayClick
-      >
-        <Card
-          alignItems="center"
-          justifyContent="center"
-          display="flex"
-          width={"70%"}
-          height={"30%"}
-        >
-          <View display="flex" alignItems="flex-end">
-            <Text mb={4} fontSize={12} fontFamily="Vazirmatn_500Medium">
-              چند نخ می خوای حالا؟
-            </Text>
-            <Input
-              mb={16}
-              variant="outline"
-              isDisabled={false}
-              isInvalid={false}
-              isReadOnly={false}
-              width={"70%"}
+      <Modal onClose={() => setOpen(false)} isOpen={open} closeOnOverlayClick>
+        <ModalBackdrop />
+        <ModalContent>
+          <ModalHeader>
+            <ModalCloseButton>
+              <Icon as={CloseIcon} />
+            </ModalCloseButton>
+          </ModalHeader>
+          <ModalBody>
+            <View display="flex" alignItems="flex-end">
+              <Text mb={4} fontSize={14} fontFamily="Vazirmatn_500Medium">
+                چند نخ می خوای حالا؟
+              </Text>
+              <Input
+                mb={16}
+                variant="outline"
+                isDisabled={false}
+                isInvalid={false}
+                isReadOnly={false}
+                width={"100%"}
+              >
+                <InputField
+                  value={amount.toString()}
+                  onChangeText={(value) => setAmount(parseInt(value) || 0)}
+                  keyboardType="number-pad"
+                  fontFamily="Vazirmatn_500Medium"
+                />
+              </Input>
+            </View>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              onPress={() =>
+                axiosInstance
+                  .post(
+                    `/nasakham`,
+                    { amount, lat: location?.[1], long: location?.[0] },
+                    {
+                      headers: {
+                        Authorization: "Bearer " + user?.token,
+                      },
+                    }
+                  )
+                  .then((data) => {
+                    setAmount(0);
+                    setOpen(false);
+                  })
+              }
+              w={"100%"}
+              backgroundColor="#f7941d"
             >
-              <InputField
-                value={amount.toString()}
-                onChangeText={(value) => setAmount(parseInt(value) || 0)}
-                keyboardType="number-pad"
-                fontFamily="Vazirmatn_500Medium"
-              />
-            </Input>
-          </View>
-          <Button
-            onPress={() =>
-              axiosInstance
-                .post(
-                  `/nasakham`,
-                  { amount, lat: location?.[1], long: location?.[0] },
-                  {
-                    headers: {
-                      Authorization: "Bearer " + user?.token,
-                    },
-                  }
-                )
-                .then((data) => {
-                  setAmount(0);
-                  setOpen(false);
-                })
-            }
-            w={"70%"}
-            backgroundColor="#f7941d"
-          >
-            <Text color="$white" fontFamily="Vazirmatn_500Medium">
-              ثبت
-            </Text>
-          </Button>
-        </Card>
+              <Text color="$white" fontFamily="Vazirmatn_500Medium">
+                ثبت
+              </Text>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
       </Modal>
     </View>
   );

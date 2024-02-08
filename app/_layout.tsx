@@ -23,6 +23,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axiosInstance from "@/lib/Instance";
 import {
+  LocationContext,
   RequestContext,
   RequestsContext,
   UserContext,
@@ -30,6 +31,8 @@ import {
 import { IRequest, IUser } from "@/types";
 import * as Updates from "expo-updates";
 import socket from "@/lib/socket";
+import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
+import measure from "@/lib/LatLongDistance";
 Mapbox.setAccessToken(
   "pk.eyJ1IjoiaHZtaWRyZXhhIiwiYSI6ImNsaHBhNHlnOTA1MHQzaW9iODhyMzFmNzkifQ.V_8EC5aNqfIqzM4pACfXlw"
 );
@@ -48,6 +51,7 @@ export default function HomeLayout() {
   const [locationPermission, setLocationPermission] = useState<boolean>(false);
   const [user, setUser] = useState<IUser>({});
   const [requests, setRequests] = useState<IRequest[]>([]);
+  const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
 
   const [activeRequest, setActiveRequest] = useState<{
@@ -111,6 +115,7 @@ export default function HomeLayout() {
   useEffect(() => {
     if (user.token)
       Location.getCurrentPositionAsync({}).then((resp) => {
+        setLocation([resp.coords.longitude, resp.coords.latitude]);
         axiosInstance
           .get(
             `/near-nasakhs?lat=${resp.coords.latitude}&long=${resp.coords.longitude}`,
@@ -133,7 +138,12 @@ export default function HomeLayout() {
 
   useEffect(() => {
     socket.on("add-nasakh", (request: IRequest) => {
-      if (!requests.includes(request) && request.nasakh.id !== user?.id) {
+      if (
+        !requests.includes(request) &&
+        request.nasakh.id !== user?.id &&
+        location &&
+        measure(request.lat, request.long, location?.[1], location?.[0]) < 300
+      ) {
         setRequests([request, ...requests]);
       }
     });
@@ -166,7 +176,8 @@ export default function HomeLayout() {
       locationPermission &&
       (fontsLoaded || fontError) &&
       user.token &&
-      isConnected
+      isConnected &&
+      location
     ) {
       await SplashScreen.hideAsync();
     }
@@ -180,22 +191,28 @@ export default function HomeLayout() {
     <UserContext.Provider value={{ user, setUser }}>
       <RequestContext.Provider value={{ activeRequest, setActiveRequest }}>
         <RequestsContext.Provider value={{ requests, setRequests }}>
-          <GluestackUIProvider config={config}>
-            <View width={"100%"} height={"100%"} onLayout={onLayoutRootView}>
-              <Stack
-                screenOptions={{
-                  headerTitleAlign: "left",
-                  headerTitle: () => <LogoIcon width={70} height={9} />,
-                  headerBackground: () => null,
-                  headerRight: () => (
-                    <Text fontFamily="Vazirmatn_700Bold">نام: {user.name}</Text>
-                  ),
-                }}
-              >
-                <Stack.Screen name="index" />
-              </Stack>
-            </View>
-          </GluestackUIProvider>
+          <LocationContext.Provider value={{ location, setLocation }}>
+            <GluestackUIProvider config={config}>
+              <View width={"100%"} height={"100%"} onLayout={onLayoutRootView}>
+                <Stack
+                  screenOptions={{
+                    headerTitle: () => {
+                      return <Text></Text>;
+                    },
+                    headerLeft: () => <LogoIcon width={70} height={9} />,
+                    headerBackground: () => null,
+                    headerRight: () => (
+                      <Text fontFamily="Vazirmatn_700Bold">
+                        نام: {user.name}
+                      </Text>
+                    ),
+                  }}
+                >
+                  <Stack.Screen name="index" />
+                </Stack>
+              </View>
+            </GluestackUIProvider>
+          </LocationContext.Provider>
         </RequestsContext.Provider>
       </RequestContext.Provider>
     </UserContext.Provider>

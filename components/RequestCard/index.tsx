@@ -2,7 +2,14 @@ import axiosInstance from "@/lib/Instance";
 import measure from "@/lib/LatLongDistance";
 import OpenMap from "@/lib/OpenMap";
 import { IRequest } from "@/types";
-import { Button, Card, Spinner, Text, View } from "@gluestack-ui/themed";
+import {
+  Button,
+  Card,
+  Pressable,
+  Spinner,
+  Text,
+  View,
+} from "@gluestack-ui/themed";
 import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 import { Image } from "react-native";
 
@@ -16,6 +23,7 @@ export default function RequestCard({
   role,
   onCancel,
   onDone,
+  najiLocation,
 }: {
   item: IRequest;
   location?: Position;
@@ -25,6 +33,7 @@ export default function RequestCard({
   onCancel?: () => void;
   onDone?: () => void;
   width?: any;
+  najiLocation?: Position;
   role?: "NAJI" | "NASAKH";
 }) {
   return (
@@ -55,9 +64,31 @@ export default function RequestCard({
           </View>
         ) : (
           <>
-            <Text marginBottom={8} fontFamily="Vazirmatn_700Bold">
-              {item.naji?.name}
-            </Text>
+            <View
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              flexDirection="row-reverse"
+            >
+              <Text
+                marginBottom={8}
+                textAlign="right"
+                fontFamily="Vazirmatn_700Bold"
+              >
+                {item.naji?.name}
+              </Text>
+              <Text fontFamily="Vazirmatn_500Medium">
+                {Math.round(
+                  measure(
+                    najiLocation?.[1] || 0,
+                    najiLocation?.[0] || 0,
+                    location?.[1] || 0,
+                    location?.[0] || 0
+                  )
+                )}{" "}
+                متر
+              </Text>
+            </View>
             <>
               <Button
                 marginBottom={8}
@@ -100,7 +131,7 @@ export default function RequestCard({
                   location?.[1] || 0,
                   location?.[0] || 0
                 )
-              )}{" "}
+              ).toLocaleString("fa-ir")}{" "}
               متر
             </Text>
           </View>
@@ -109,7 +140,7 @@ export default function RequestCard({
             fontSize={14}
             fontFamily="Vazirmatn_400Regular"
           >
-            <Text fontFamily="Vazirmatn_700Bold">
+            <Text textAlign="right" fontFamily="Vazirmatn_700Bold">
               {item.amount.toLocaleString("fa-ir")}
             </Text>{" "}
             نخ می خواد
