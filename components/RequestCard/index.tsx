@@ -42,7 +42,7 @@ export default function RequestCard({
   useEffect(() => {
     (async () => {
       const { sound } = await Audio.Sound.createAsync(
-        { uri: `http://${process.env.EXPO_PUBLIC_BASE_URL}/notif.mp3` },
+        { uri: `https://${process.env.EXPO_PUBLIC_BASE_URL}/notif.mp3` },
         { isLooping: true, volume: 1 }
       );
       setSound(sound);

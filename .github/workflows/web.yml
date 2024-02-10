@@ -43,4 +43,4 @@ jobs:
           script: |
             docker stop nasakh-web
             docker remove nasakh-web
-            docker run --name nasakh-web -p 80:80 -v /root/nasakh-web/:/usr/share/nginx/html:ro -d nginx
+            docker run --name nasakh-web -p 443:443 -v /root/nasakh-web/:/usr/share/nginx/html:ro -v /root/conf.d/:/etc/nginx/conf.d/ -d nginx
