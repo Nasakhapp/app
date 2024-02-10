@@ -192,6 +192,7 @@ export default function HomeLayout() {
   }, [user]);
   useEffect(() => {
     socket.on("connect", () => {
+      console.log("connect to socket");
       setConnected(true);
     });
     socket.on("disconnect", (reason) => {
