@@ -41,10 +41,14 @@ export default function RequestCard({
   const [isPlaying, setPlaying] = useState<boolean>(false);
   useEffect(() => {
     (async () => {
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: `https://${process.env.EXPO_PUBLIC_BASE_URL}/notif.mp3` },
-        { isLooping: true, volume: 1 }
-      );
+      const sound = new Audio.Sound();
+      sound
+        .loadAsync({
+          uri: `https://${process.env.EXPO_PUBLIC_BASE_URL}/api/notif.mp3`,
+        })
+        .then((data) => {
+          sound.setPositionAsync(0);
+        });
       setSound(sound);
     })();
   }, []);
@@ -111,6 +115,7 @@ export default function RequestCard({
                 <Button
                   marginHorizontal={4}
                   onPress={onDone}
+                  flex={1}
                   backgroundColor="$success500"
                 >
                   <Text color="$white" fontFamily="Vazirmatn_500Medium">
@@ -118,19 +123,23 @@ export default function RequestCard({
                   </Text>
                 </Button>
                 <Button
+                  flex={1}
                   marginHorizontal={4}
-                  onPress={() => {
+                  onPress={async () => {
                     if (isPlaying) {
-                      sound?.pauseAsync();
+                      sound?.pauseAsync().then(() =>
+                        sound.setPositionAsync(0).then(() => {
+                          setPlaying(false);
+                        })
+                      );
                     } else {
-                      sound?.playAsync();
+                      sound?.playAsync().then(() => setPlaying(true));
                     }
-                    setPlaying(!isPlaying);
                   }}
                   backgroundColor="$black"
                 >
                   <Text color="$white" fontFamily="Vazirmatn_500Medium">
-                    {!isPlaying ? "اینو بزنی پیدات میکنه" : "قطعش کن"}
+                    {!isPlaying ? "پخش صدا" : "قطعش کن"}
                   </Text>
                 </Button>
               </View>
