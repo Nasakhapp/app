@@ -52,6 +52,17 @@ export default function RequestCard({
       setSound(sound);
     })();
   }, []);
+  useEffect(() => {
+    if (role !== "NASAKH" || item.status !== "BRINGING") {
+      if (isPlaying) {
+        sound?.pauseAsync().then(() =>
+          sound.setPositionAsync(0).then(() => {
+            setPlaying(false);
+          })
+        );
+      }
+    }
+  }, [item, role]);
   return (
     <Card width={width}>
       {role === "NASAKH" ? (
