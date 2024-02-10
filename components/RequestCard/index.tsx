@@ -12,7 +12,8 @@ import {
 } from "@gluestack-ui/themed";
 import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 import { Image } from "react-native";
-
+import { Audio } from "expo-av";
+import { useEffect, useState } from "react";
 export default function RequestCard({
   item,
   location,
@@ -36,6 +37,17 @@ export default function RequestCard({
   najiLocation?: Position;
   role?: "NAJI" | "NASAKH";
 }) {
+  const [sound, setSound] = useState<Audio.Sound>();
+  const [isPlaying, setPlaying] = useState<boolean>(false);
+  useEffect(() => {
+    (async () => {
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: `http://${process.env.EXPO_PUBLIC_BASE_URL}/notif.mp3` },
+        { isLooping: true, volume: 1 }
+      );
+      setSound(sound);
+    })();
+  }, []);
   return (
     <Card width={width}>
       {role === "NASAKH" ? (
@@ -90,15 +102,38 @@ export default function RequestCard({
               </Text>
             </View>
             <>
-              <Button
+              <View
                 marginBottom={8}
-                onPress={onDone}
-                backgroundColor="$success500"
+                display="flex"
+                flexDirection="row-reverse"
+                alignItems="center"
               >
-                <Text color="$white" fontFamily="Vazirmatn_500Medium">
-                  رفع نسخی
-                </Text>
-              </Button>
+                <Button
+                  marginHorizontal={4}
+                  onPress={onDone}
+                  backgroundColor="$success500"
+                >
+                  <Text color="$white" fontFamily="Vazirmatn_500Medium">
+                    رفع نسخی
+                  </Text>
+                </Button>
+                <Button
+                  marginHorizontal={4}
+                  onPress={() => {
+                    if (isPlaying) {
+                      sound?.pauseAsync();
+                    } else {
+                      sound?.playAsync();
+                    }
+                    setPlaying(!isPlaying);
+                  }}
+                  backgroundColor="$black"
+                >
+                  <Text color="$white" fontFamily="Vazirmatn_500Medium">
+                    {!isPlaying ? "اینو بزنی پیدات میکنه" : "قطعش کن"}
+                  </Text>
+                </Button>
+              </View>
               <Button
                 borderColor="$error500"
                 borderStyle="solid"

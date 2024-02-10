@@ -17,24 +17,16 @@ import {
   Text,
   View,
 } from "@gluestack-ui/themed";
-import {
-  Camera,
-  MapView,
-  PointAnnotation,
-  ShapeSource,
-  UserLocation,
-  UserTrackingMode,
-} from "@rnmapbox/maps";
+
 import { LocationObject } from "expo-location";
 import { createRef, useContext, useEffect, useState } from "react";
-import { Dimensions, FlatList } from "react-native";
+import { Dimensions, FlatList, Platform } from "react-native";
 import * as Location from "expo-location";
-import Carousel from "react-native-snap-carousel";
+import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
 import measure from "@/lib/LatLongDistance";
-import LogoIcon from "@/assets/images/Nasakh.svg";
 import { CameraRef } from "@rnmapbox/maps/lib/typescript/src/components/Camera";
 import RequestCard from "@/components/RequestCard";
-import { FontAwesome6 } from "@expo/vector-icons";
+import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { Link, Navigator, useNavigation } from "expo-router";
 import { IRequest } from "@/types";
 import socket from "@/lib/socket";
@@ -47,11 +39,12 @@ import {
   UserContext,
 } from "@/components/Contexts/Contexts";
 import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
+import MapView from "@/components/MapView";
 
 export default function HomePage() {
   const [focus, setFocus] = useState<number>();
   const camera = createRef<CameraRef>();
-  const slider = createRef<Carousel<any>>();
+  const slider = createRef<ICarouselInstance>();
   const { activeRequest, setActiveRequest } = useContext(RequestContext);
   const { location, setLocation } = useContext(LocationContext);
   const { requests, setRequests } = useContext(RequestsContext);
@@ -59,26 +52,6 @@ export default function HomePage() {
   const [amount, setAmount] = useState<number>(0);
   const [open, setOpen] = useState<boolean>(false);
   const [najiLocation, setNajiLocation] = useState<Position>([0, 0]);
-
-  useEffect(() => {
-    if (!activeRequest?.role && location && !focus) {
-      camera.current?.setCamera({
-        centerCoordinate: [location[0], location[1]],
-        animationDuration: 1000,
-        zoomLevel: 16,
-      });
-    }
-  }, [activeRequest, location]);
-
-  useEffect(() => {
-    if (focus && requests && requests[focus])
-      camera.current?.setCamera({
-        zoomLevel: 16,
-        centerCoordinate: [requests?.[focus].long, requests?.[focus].lat],
-        animationDuration: 2000,
-        animationMode: "flyTo",
-      });
-  }, [focus]);
 
   useEffect(() => {
     if (
@@ -112,34 +85,7 @@ export default function HomePage() {
       });
   }, [najiLocation, activeRequest]);
 
-  useEffect(() => {
-    if (activeRequest?.request)
-      if (
-        activeRequest?.role === "NASAKH" &&
-        activeRequest.request.status === "BRINGING" &&
-        location
-      )
-        camera.current?.fitBounds(najiLocation, location, 60, 500);
-      else if (activeRequest?.role === "NAJI" && location)
-        camera.current?.fitBounds(
-          location,
-          [activeRequest?.request?.long, activeRequest?.request?.lat],
-          40,
-          1000
-        );
-      else if (
-        activeRequest?.role === "NASAKH" &&
-        activeRequest.request.status === "SEARCHING"
-      )
-        camera.current?.setCamera({
-          zoomLevel: 16,
-          centerCoordinate: location,
-          animationDuration: 2000,
-          animationMode: "flyTo",
-        });
-  }, [activeRequest?.role, location, najiLocation]);
-
-  if (!user?.token)
+  if (!user?.token && !location?.[0] && !location?.[1])
     return (
       <View
         width={"100%"}
@@ -155,59 +101,14 @@ export default function HomePage() {
   return (
     <View width={"100%"} height={"100%"} position="relative">
       <MapView
-        zoomEnabled
-        logoEnabled={false}
-        scrollEnabled={!activeRequest?.role}
-        scaleBarEnabled={false}
-        attributionEnabled={false}
-        style={{ flex: 1 }}
-      >
-        {!activeRequest?.request ? (
-          requests?.map((item) => (
-            <PointAnnotation
-              coordinate={[item.long || 0, item.lat || 0]}
-              key={`marker-${item.id}`}
-              id={`marker-${item.id}`}
-            >
-              <Card>
-                <LogoIcon width={50} height={6} />
-              </Card>
-            </PointAnnotation>
-          ))
-        ) : activeRequest.role === "NAJI" ? (
-          <PointAnnotation
-            coordinate={[
-              activeRequest.request.long || 0,
-              activeRequest.request.lat || 0,
-            ]}
-            key={`marker-${activeRequest.request.id}`}
-            id={`marker-${activeRequest.request.id}`}
-          >
-            <Card>
-              <LogoIcon width={50} height={6} />
-            </Card>
-          </PointAnnotation>
-        ) : activeRequest?.request.status === "BRINGING" ? (
-          <PointAnnotation
-            coordinate={najiLocation}
-            key={`marker-${activeRequest.request.id}`}
-            id={`marker-${activeRequest.request.id}`}
-          >
-            <Card>
-              <Text fontFamily="Vazirmatn_500Medium">ناجی</Text>
-            </Card>
-          </PointAnnotation>
-        ) : null}
-        <UserLocation
-          onUpdate={(newLocation) =>
-            setLocation?.([
-              newLocation.coords.longitude,
-              newLocation.coords.latitude,
-            ])
-          }
-        />
-        <Camera ref={camera} />
-      </MapView>
+        focus={focus}
+        camera={camera}
+        najiLocation={najiLocation}
+        requests={requests!}
+        activeRequest={activeRequest}
+        setLocation={setLocation}
+        location={location}
+      />
       {!activeRequest?.role ? (
         <Button
           position="absolute"
@@ -272,22 +173,31 @@ export default function HomePage() {
             </Text>
             {requests?.length && requests?.length > 0 ? (
               <Carousel
+                height={Dimensions.get("screen").height * 0.15}
+                loop={false}
                 onSnapToItem={(index) => setFocus(index)}
-                sliderWidth={Dimensions.get("screen").width}
-                itemWidth={Dimensions.get("screen").width * 0.7}
+                width={Dimensions.get("screen").width}
                 data={requests}
                 ref={slider}
                 renderItem={({ item, index }) => (
-                  <RequestCard
-                    item={item}
-                    location={location}
-                    onAccept={() => {
-                      axiosInstance.get(`/request/${item.id}/accept`, {
-                        headers: { Authorization: "Bearer " + user?.token },
-                      });
-                    }}
-                    accepted={false}
-                  />
+                  <View
+                    width={Dimensions.get("screen").width}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <RequestCard
+                      item={item}
+                      width={Dimensions.get("screen").width * 0.7}
+                      location={location}
+                      onAccept={() => {
+                        axiosInstance.get(`/request/${item.id}/accept`, {
+                          headers: { Authorization: "Bearer " + user?.token },
+                        });
+                      }}
+                      accepted={false}
+                    />
+                  </View>
                 )}
               />
             ) : (
@@ -298,6 +208,11 @@ export default function HomePage() {
                 width={Dimensions.get("screen").width * 0.7}
                 height={100}
               >
+                <Ionicons
+                  name="sad-outline"
+                  style={{ marginBottom: 8 }}
+                  size={24}
+                />
                 <Text fontSize={12} fontFamily="Vazirmatn_500Medium">
                   اون ورا انگار هیچکی نسخ نیست!
                 </Text>

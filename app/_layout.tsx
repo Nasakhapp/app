@@ -7,7 +7,6 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { Button, GluestackUIProvider, Text, View } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config"; // Optional if you want to use default theme
 import * as Location from "expo-location";
-import Mapbox from "@rnmapbox/maps";
 import io from "socket.io-client";
 import {
   Vazirmatn_100Thin,
@@ -37,9 +36,6 @@ import { Platform } from "react-native";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
-Mapbox.setAccessToken(
-  "pk.eyJ1IjoiaHZtaWRyZXhhIiwiYSI6ImNsaHBhNHlnOTA1MHQzaW9iODhyMzFmNzkifQ.V_8EC5aNqfIqzM4pACfXlw"
-);
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -51,6 +47,8 @@ Notifications.setNotificationHandler({
 
 async function registerForPushNotificationsAsync() {
   let token;
+
+  if (Platform.OS === "web") return "noToken";
 
   if (Platform.OS === "android") {
     Notifications.setNotificationChannelAsync("default", {
@@ -76,7 +74,6 @@ async function registerForPushNotificationsAsync() {
     token = await Notifications.getExpoPushTokenAsync({
       projectId: Constants.expoConfig?.extra?.eas.projectId,
     });
-    console.log(token);
   } else {
     alert("Must use physical device for Push Notifications");
   }
@@ -125,7 +122,12 @@ export default function HomeLayout() {
       onFetchUpdateAsync().then(() => {
         Location.requestForegroundPermissionsAsync().then((data) => {
           setLocationPermission(data.status === "granted");
-          if (data.status !== "granted") return;
+          console.log(data.status);
+          if (
+            data.status !== Location.PermissionStatus.GRANTED &&
+            data.status !== Location.PermissionStatus.UNDETERMINED
+          )
+            return;
           AsyncStorage.getItem("token").then((token) => {
             if (!token) {
               axiosInstance.get("/new-user").then((data) => {
@@ -238,7 +240,8 @@ export default function HomeLayout() {
       (fontsLoaded || fontError) &&
       user.token &&
       isConnected &&
-      location &&
+      location?.[0] &&
+      location?.[1] &&
       expoPushToken
     ) {
       await SplashScreen.hideAsync();
@@ -261,10 +264,19 @@ export default function HomeLayout() {
                     headerTitle: () => {
                       return <Text></Text>;
                     },
-                    headerLeft: () => <LogoIcon width={70} height={9} />,
+                    headerLeft: () => (
+                      <LogoIcon
+                        style={{ marginLeft: Platform.OS === "web" ? 16 : 0 }}
+                        width={70}
+                        height={9}
+                      />
+                    ),
                     headerBackground: () => null,
                     headerRight: () => (
-                      <Text fontFamily="Vazirmatn_700Bold">
+                      <Text
+                        marginRight={Platform.OS === "web" ? 16 : 0}
+                        fontFamily="Vazirmatn_700Bold"
+                      >
                         نام: {user.name}
                       </Text>
                     ),
