@@ -1,0 +1,46 @@
+name: Node.js CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build Web
+        run: yarn build:web
+
+      - name: Send to server
+        uses: garygrossgarten/github-action-scp@release
+        with:
+          local: ./dist/
+          remote: /root/nasakh-web/
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASS }}
+
+      - name: multiple command
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASS }}
+          port: 22
+          script: |
+            docker stop nasakh-web
+            docker remove nasakh-web
+            docker run --name nasakh-web -p 80:80 -v /root/nasakh-web/:/usr/share/nginx/html:ro -d nginx
