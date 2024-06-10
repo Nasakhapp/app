@@ -44,7 +44,7 @@ export default function RequestCard({
       const sound = new Audio.Sound();
       sound
         .loadAsync({
-          uri: `https://${process.env.EXPO_PUBLIC_BASE_URL}/api/notif.mp3`,
+          uri: `${process.env.EXPO_PUBLIC_BASE_URL}/notif.mp3`,
         })
         .then((data) => {
           sound.setPositionAsync(0);

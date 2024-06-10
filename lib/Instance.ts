@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: `https://${process.env.EXPO_PUBLIC_BASE_URL}/api`,
+  baseURL: `${process.env.EXPO_PUBLIC_BASE_URL}`,
 });
 
 axiosInstance.interceptors.response.use(
