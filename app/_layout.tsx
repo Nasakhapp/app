@@ -7,7 +7,6 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { Button, GluestackUIProvider, Text, View } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config"; // Optional if you want to use default theme
 import * as Location from "expo-location";
-import Mapbox from "@rnmapbox/maps";
 import io from "socket.io-client";
 import {
   Vazirmatn_100Thin,
@@ -23,6 +22,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axiosInstance from "@/lib/Instance";
 import {
+  LocationContext,
   RequestContext,
   RequestsContext,
   UserContext,
@@ -30,9 +30,56 @@ import {
 import { IRequest, IUser } from "@/types";
 import * as Updates from "expo-updates";
 import socket from "@/lib/socket";
-Mapbox.setAccessToken(
-  "pk.eyJ1IjoiaHZtaWRyZXhhIiwiYSI6ImNsaHBhNHlnOTA1MHQzaW9iODhyMzFmNzkifQ.V_8EC5aNqfIqzM4pACfXlw"
-);
+import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
+import measure from "@/lib/LatLongDistance";
+import { Platform } from "react-native";
+import * as Device from "expo-device";
+import * as Notifications from "expo-notifications";
+import Constants from "expo-constants";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  if (Platform.OS === "web") return "noToken";
+
+  if (Platform.OS === "android") {
+    Notifications.setNotificationChannelAsync("default", {
+      name: "default",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#FF231F7C",
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== "granted") {
+      alert("Failed to get push token for push notification!");
+      return;
+    }
+    token = await Notifications.getExpoPushTokenAsync({
+      projectId: Constants.expoConfig?.extra?.eas.projectId,
+    });
+  } else {
+    alert("Must use physical device for Push Notifications");
+  }
+
+  return token?.data;
+}
 
 export default function HomeLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -48,7 +95,9 @@ export default function HomeLayout() {
   const [locationPermission, setLocationPermission] = useState<boolean>(false);
   const [user, setUser] = useState<IUser>({});
   const [requests, setRequests] = useState<IRequest[]>([]);
+  const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
+  const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
 
   const [activeRequest, setActiveRequest] = useState<{
     request?: IRequest;
@@ -68,41 +117,59 @@ export default function HomeLayout() {
     }
   }
   useEffect(() => {
-    onFetchUpdateAsync().then(() => {
-      Location.requestForegroundPermissionsAsync().then((data) => {
-        setLocationPermission(data.status === "granted");
-        if (data.status !== "granted") return;
-        AsyncStorage.getItem("token").then((token) => {
-          if (!token) {
-            axiosInstance.get("/new-user").then((data) => {
-              const user = data.data;
-              AsyncStorage.setItem("token", user.token);
-              setUser(user);
-            });
-          } else {
-            axiosInstance
-              .get("/me", {
-                headers: { Authorization: "Bearer " + token },
-              })
-              .then((data) => {
-                setUser({ ...data.data, token });
-                if (data.data.UserAsNajiRequests.length > 0) {
-                  setActiveRequest({
-                    request: data.data.UserAsNajiRequests?.[0],
-                    role: "NAJI",
-                  });
-                }
-                if (data.data.UserAsNasakhRequests.length > 0) {
-                  setActiveRequest({
-                    request: data.data.UserAsNasakhRequests?.[0],
-                    role: "NASAKH",
-                  });
-                }
+    registerForPushNotificationsAsync().then((pushToken) => {
+      setExpoPushToken(pushToken);
+      onFetchUpdateAsync().then(() => {
+        Location.requestForegroundPermissionsAsync().then((data) => {
+          setLocationPermission(data.status === "granted");
+          console.log(data.status);
+          if (
+            data.status !== Location.PermissionStatus.GRANTED &&
+            data.status !== Location.PermissionStatus.UNDETERMINED
+          )
+            return;
+          AsyncStorage.getItem("token").then((token) => {
+            if (!token) {
+              axiosInstance.get("/new-user").then((data) => {
+                const user = data.data;
+                AsyncStorage.setItem("token", user.token);
+                setUser(user);
               });
-          }
+            } else {
+              axiosInstance
+                .get("/me", {
+                  headers: { Authorization: "Bearer " + token },
+                })
+                .then((data) => {
+                  setUser({ ...data.data, token });
+                  if (data.data.UserAsNajiRequests.length > 0) {
+                    setActiveRequest({
+                      request: data.data.UserAsNajiRequests?.[0],
+                      role: "NAJI",
+                    });
+                  }
+                  if (data.data.UserAsNasakhRequests.length > 0) {
+                    setActiveRequest({
+                      request: data.data.UserAsNasakhRequests?.[0],
+                      role: "NASAKH",
+                    });
+                  }
+                });
+            }
+            axiosInstance.patch(
+              "push-token",
+              { pushToken },
+              {
+                headers: {
+                  Authorization: "Bearer " + token,
+                },
+              }
+            );
+          });
         });
       });
     });
+
     return () => {
       socket.disconnect();
       socket.removeAllListeners();
@@ -111,6 +178,7 @@ export default function HomeLayout() {
   useEffect(() => {
     if (user.token)
       Location.getCurrentPositionAsync({}).then((resp) => {
+        setLocation([resp.coords.longitude, resp.coords.latitude]);
         axiosInstance
           .get(
             `/near-nasakhs?lat=${resp.coords.latitude}&long=${resp.coords.longitude}`,
@@ -124,18 +192,22 @@ export default function HomeLayout() {
   }, [user]);
   useEffect(() => {
     socket.on("connect", () => {
-      console.log("connect");
+      console.log("connect to socket");
       setConnected(true);
     });
     socket.on("disconnect", (reason) => {
-      console.log(reason);
       socket.connect();
     });
   }, [socket]);
 
   useEffect(() => {
     socket.on("add-nasakh", (request: IRequest) => {
-      if (!requests.includes(request) && request.nasakh.id !== user?.id) {
+      if (
+        !requests.includes(request) &&
+        request.nasakh.id !== user?.id &&
+        location &&
+        measure(request.lat, request.long, location?.[1], location?.[0]) < 300
+      ) {
         setRequests([request, ...requests]);
       }
     });
@@ -154,7 +226,6 @@ export default function HomeLayout() {
     socket.on(
       user.id || "",
       (data: { request?: IRequest; role?: "NAJI" | "NASAKH" }) => {
-        console.log(data);
         setActiveRequest?.(data);
       }
     );
@@ -169,7 +240,10 @@ export default function HomeLayout() {
       locationPermission &&
       (fontsLoaded || fontError) &&
       user.token &&
-      isConnected
+      isConnected &&
+      location?.[0] &&
+      location?.[1] &&
+      expoPushToken
     ) {
       await SplashScreen.hideAsync();
     }
@@ -183,22 +257,37 @@ export default function HomeLayout() {
     <UserContext.Provider value={{ user, setUser }}>
       <RequestContext.Provider value={{ activeRequest, setActiveRequest }}>
         <RequestsContext.Provider value={{ requests, setRequests }}>
-          <GluestackUIProvider config={config}>
-            <View width={"100%"} height={"100%"} onLayout={onLayoutRootView}>
-              <Stack
-                screenOptions={{
-                  headerTitleAlign: "left",
-                  headerTitle: () => <LogoIcon width={70} height={9} />,
-                  headerBackground: () => null,
-                  headerRight: () => (
-                    <Text fontFamily="Vazirmatn_700Bold">نام: {user.name}</Text>
-                  ),
-                }}
-              >
-                <Stack.Screen name="index" />
-              </Stack>
-            </View>
-          </GluestackUIProvider>
+          <LocationContext.Provider value={{ location, setLocation }}>
+            <GluestackUIProvider config={config}>
+              <View width={"100%"} height={"100%"} onLayout={onLayoutRootView}>
+                <Stack
+                  screenOptions={{
+                    headerTitle: () => {
+                      return <Text></Text>;
+                    },
+                    headerLeft: () => (
+                      <LogoIcon
+                        style={{ marginLeft: Platform.OS === "web" ? 16 : 0 }}
+                        width={70}
+                        height={9}
+                      />
+                    ),
+                    headerBackground: () => null,
+                    headerRight: () => (
+                      <Text
+                        marginRight={Platform.OS === "web" ? 16 : 0}
+                        fontFamily="Vazirmatn_700Bold"
+                      >
+                        نام: {user.name}
+                      </Text>
+                    ),
+                  }}
+                >
+                  <Stack.Screen name="index" />
+                </Stack>
+              </View>
+            </GluestackUIProvider>
+          </LocationContext.Provider>
         </RequestsContext.Provider>
       </RequestContext.Provider>
     </UserContext.Provider>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "507442920025",
+    "project_id": "nasakh",
+    "storage_bucket": "nasakh.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:507442920025:android:f80770e4ef5e8bb3b84f48",
+        "android_client_info": {
+          "package_name": "com.nasakh.nasakh"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAF7nymUXQaOfUPe0Sca6YLTZTmoIWhB1E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

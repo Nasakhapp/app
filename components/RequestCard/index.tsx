@@ -2,10 +2,18 @@ import axiosInstance from "@/lib/Instance";
 import measure from "@/lib/LatLongDistance";
 import OpenMap from "@/lib/OpenMap";
 import { IRequest } from "@/types";
-import { Button, Card, Spinner, Text, View } from "@gluestack-ui/themed";
+import {
+  Button,
+  Card,
+  Pressable,
+  Spinner,
+  Text,
+  View,
+} from "@gluestack-ui/themed";
 import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 import { Image } from "react-native";
-
+import { Audio } from "expo-av";
+import { useEffect, useState } from "react";
 export default function RequestCard({
   item,
   location,
@@ -16,6 +24,7 @@ export default function RequestCard({
   role,
   onCancel,
   onDone,
+  najiLocation,
 }: {
   item: IRequest;
   location?: Position;
@@ -25,8 +34,35 @@ export default function RequestCard({
   onCancel?: () => void;
   onDone?: () => void;
   width?: any;
+  najiLocation?: Position;
   role?: "NAJI" | "NASAKH";
 }) {
+  const [sound, setSound] = useState<Audio.Sound>();
+  const [isPlaying, setPlaying] = useState<boolean>(false);
+  useEffect(() => {
+    (async () => {
+      const sound = new Audio.Sound();
+      sound
+        .loadAsync({
+          uri: `${process.env.EXPO_PUBLIC_BASE_URL}/notif.mp3`,
+        })
+        .then((data) => {
+          sound.setPositionAsync(0);
+        });
+      setSound(sound);
+    })();
+  }, []);
+  useEffect(() => {
+    if (role !== "NASAKH" || item.status !== "BRINGING") {
+      if (isPlaying) {
+        sound?.pauseAsync().then(() =>
+          sound.setPositionAsync(0).then(() => {
+            setPlaying(false);
+          })
+        );
+      }
+    }
+  }, [item, role]);
   return (
     <Card width={width}>
       {role === "NASAKH" ? (
@@ -55,19 +91,69 @@ export default function RequestCard({
           </View>
         ) : (
           <>
-            <Text marginBottom={8} fontFamily="Vazirmatn_700Bold">
-              {item.naji?.name}
-            </Text>
-            <>
-              <Button
+            <View
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              flexDirection="row-reverse"
+            >
+              <Text
                 marginBottom={8}
-                onPress={onDone}
-                backgroundColor="$success500"
+                textAlign="right"
+                fontFamily="Vazirmatn_700Bold"
               >
-                <Text color="$white" fontFamily="Vazirmatn_500Medium">
-                  به سوی نسخ
-                </Text>
-              </Button>
+                {item.naji?.name}
+              </Text>
+              <Text fontFamily="Vazirmatn_500Medium">
+                {Math.round(
+                  measure(
+                    najiLocation?.[1] || 0,
+                    najiLocation?.[0] || 0,
+                    location?.[1] || 0,
+                    location?.[0] || 0
+                  )
+                )}{" "}
+                متر
+              </Text>
+            </View>
+            <>
+              <View
+                marginBottom={8}
+                display="flex"
+                flexDirection="row-reverse"
+                alignItems="center"
+              >
+                <Button
+                  marginHorizontal={4}
+                  onPress={onDone}
+                  flex={1}
+                  backgroundColor="$success500"
+                >
+                  <Text color="$white" fontFamily="Vazirmatn_500Medium">
+                    رفع نسخی
+                  </Text>
+                </Button>
+                <Button
+                  flex={1}
+                  marginHorizontal={4}
+                  onPress={async () => {
+                    if (isPlaying) {
+                      sound?.pauseAsync().then(() =>
+                        sound.setPositionAsync(0).then(() => {
+                          setPlaying(false);
+                        })
+                      );
+                    } else {
+                      sound?.playAsync().then(() => setPlaying(true));
+                    }
+                  }}
+                  backgroundColor="$black"
+                >
+                  <Text color="$white" fontFamily="Vazirmatn_500Medium">
+                    {!isPlaying ? "پخش صدا" : "قطعش کن"}
+                  </Text>
+                </Button>
+              </View>
               <Button
                 borderColor="$error500"
                 borderStyle="solid"
@@ -100,7 +186,7 @@ export default function RequestCard({
                   location?.[1] || 0,
                   location?.[0] || 0
                 )
-              )}{" "}
+              ).toLocaleString("fa-ir")}{" "}
               متر
             </Text>
           </View>
@@ -109,7 +195,7 @@ export default function RequestCard({
             fontSize={14}
             fontFamily="Vazirmatn_400Regular"
           >
-            <Text fontFamily="Vazirmatn_700Bold">
+            <Text textAlign="right" fontFamily="Vazirmatn_700Bold">
               {item.amount.toLocaleString("fa-ir")}
             </Text>{" "}
             نخ می خواد

@@ -16,7 +16,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_BASE_URL": "103.75.198.89"
+        "EXPO_PUBLIC_BASE_URL": "https://nasakh.app"
       },
       "channel": "staging"
     },
