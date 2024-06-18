@@ -44,7 +44,12 @@ import measure from "@/lib/LatLongDistance";
 import socket from "@/lib/socket";
 import { IRequest, IUser } from "@/types";
 import { TonConnectButton, TonConnectUIProvider } from "@tonconnect/ui-react";
-import { SDKProvider, useInitData, useInitDataRaw } from "@tma.js/sdk-react";
+import {
+  SDKProvider,
+  useCloudStorage,
+  useInitData,
+  useInitDataRaw,
+} from "@tma.js/sdk-react";
 
 function Root() {
   const [fontsLoaded, fontError] = useFonts({
@@ -64,6 +69,7 @@ function Root() {
   const [isConnected, setConnected] = useState<boolean>(false);
 
   const initData = useInitData();
+  const cloudStorage = useCloudStorage();
 
   const [activeRequest, setActiveRequest] = useState<{
     request?: IRequest;
@@ -77,7 +83,7 @@ function Root() {
     console.log(
       new URLSearchParams(JSON.parse(JSON.stringify(initData))).toString()
     );
-    AsyncStorage.getItem("token").then((token) => {
+    cloudStorage.get("token").then((token) => {
       if (!token) {
         axiosInstance
           .get("/token", {
@@ -89,7 +95,7 @@ function Root() {
           })
           .then((data) => {
             const user = data.data;
-            AsyncStorage.setItem("token", user.token);
+            cloudStorage.set("token", user.token);
             setUser(user);
           });
       } else {
