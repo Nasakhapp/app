@@ -74,6 +74,9 @@ function Root() {
     Location.requestForegroundPermissionsAsync().then((data) => {
       setLocationPermission(data.status === "granted");
     });
+    console.log(
+      new URLSearchParams(JSON.parse(JSON.stringify(initData))).toString()
+    );
     AsyncStorage.getItem("token").then((token) => {
       if (!token) {
         axiosInstance
