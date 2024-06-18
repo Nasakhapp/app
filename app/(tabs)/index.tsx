@@ -81,10 +81,6 @@ export default function HomePage() {
       });
   }, [najiLocation, activeRequest]);
 
-  useEffect(() => {
-    console.log(initData);
-  }, [initData]);
-
   if (!user?.token && !location?.[0] && !location?.[1])
     return (
       <View
