@@ -1,3 +1,4 @@
+import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import {
   Button,
   Card,
@@ -12,34 +13,27 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-  ScrollView,
   Spinner,
   Text,
   View,
 } from "@gluestack-ui/themed";
-
-import { LocationObject } from "expo-location";
-import { createRef, useContext, useEffect, useState } from "react";
-import { Dimensions, FlatList, Platform } from "react-native";
-import * as Location from "expo-location";
-import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
-import measure from "@/lib/LatLongDistance";
 import { CameraRef } from "@rnmapbox/maps/lib/typescript/src/components/Camera";
-import RequestCard from "@/components/RequestCard";
-import { FontAwesome6, Ionicons } from "@expo/vector-icons";
-import { Link, Navigator, useNavigation } from "expo-router";
-import { IRequest } from "@/types";
-import socket from "@/lib/socket";
-import axios from "axios";
-import axiosInstance from "@/lib/Instance";
+import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
+import { createRef, useContext, useEffect, useState } from "react";
+import { Dimensions } from "react-native";
+import Carousel, { ICarouselInstance } from "react-native-reanimated-carousel";
+
 import {
   LocationContext,
   RequestContext,
   RequestsContext,
   UserContext,
 } from "@/components/Contexts/Contexts";
-import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 import MapView from "@/components/MapView";
+
+import RequestCard from "@/components/RequestCard";
+import axiosInstance from "@/lib/Instance";
+import socket from "@/lib/socket";
 
 export default function HomePage() {
   const [focus, setFocus] = useState<number>();
@@ -88,8 +82,8 @@ export default function HomePage() {
   if (!user?.token && !location?.[0] && !location?.[1])
     return (
       <View
-        width={"100%"}
-        height={"100%"}
+        width="100%"
+        height="100%"
         position="relative"
         display="flex"
         alignItems="center"
@@ -99,10 +93,10 @@ export default function HomePage() {
       </View>
     );
   return (
-    <View width={"100%"} height={"100%"} position="relative">
+    <View width="100%" height="100%" position="relative">
       <MapView
-        focus={focus}
-        camera={camera}
+        // focus={focus}
+        // camera={camera}
         najiLocation={najiLocation}
         requests={requests!}
         activeRequest={activeRequest}
@@ -114,21 +108,31 @@ export default function HomePage() {
           position="absolute"
           top={16}
           right={16}
-          backgroundColor={"$black"}
+          backgroundColor="$black"
           onPress={() => setOpen(true)}
+          disabled={!location?.[0] && !location?.[1]}
         >
-          <FontAwesome6
-            name="hand-holding"
-            size={24}
-            color="#fff"
-            style={{ marginTop: -12 }}
-          />
+          {!location?.[0] && !location?.[1] ? (
+            <View display="flex" flexDirection="row-reverse" gap={16}>
+              <Text fontFamily="Vazirmatn_500Medium" color="$white">
+                درحال موقعیت یابی
+              </Text>
+              <Spinner color="white" />
+            </View>
+          ) : (
+            <FontAwesome6
+              name="hand-holding"
+              size={24}
+              color="#fff"
+              style={{ marginTop: -12 }}
+            />
+          )}
         </Button>
       ) : null}
       <View
         bottom={16}
         position="absolute"
-        width={"100%"}
+        width="100%"
         display="flex"
         alignItems="center"
       >
@@ -240,7 +244,7 @@ export default function HomePage() {
                 isDisabled={false}
                 isInvalid={false}
                 isReadOnly={false}
-                width={"100%"}
+                width="100%"
               >
                 <InputField
                   value={amount.toString()}
@@ -269,7 +273,7 @@ export default function HomePage() {
                     setOpen(false);
                   })
               }
-              w={"100%"}
+              w="100%"
               backgroundColor="#f7941d"
             >
               <Text color="$white" fontFamily="Vazirmatn_500Medium">

@@ -1,13 +1,4 @@
-import { Stack, Tabs } from "expo-router";
-import LogoIcon from "@/assets/images/Nasakh.svg";
-import { useFonts } from "expo-font";
-import { useCallback, useEffect, useState } from "react";
-import * as SplashScreen from "expo-splash-screen";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
-import { Button, GluestackUIProvider, Text, View } from "@gluestack-ui/themed";
-import { config } from "@gluestack-ui/config"; // Optional if you want to use default theme
-import * as Location from "expo-location";
-import io from "socket.io-client";
 import {
   Vazirmatn_100Thin,
   Vazirmatn_200ExtraLight,
@@ -19,23 +10,40 @@ import {
   Vazirmatn_800ExtraBold,
   Vazirmatn_900Black,
 } from "@expo-google-fonts/vazirmatn";
+import { config } from "@gluestack-ui/config"; // Optional if you want to use default theme
+import {
+  Box,
+  Button,
+  GluestackUIProvider,
+  Text,
+  View,
+} from "@gluestack-ui/themed";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import axiosInstance from "@/lib/Instance";
+import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
+import Constants from "expo-constants";
+import * as Device from "expo-device";
+import { useFonts } from "expo-font";
+import * as Location from "expo-location";
+import * as Notifications from "expo-notifications";
+import { Stack, Tabs } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import * as Updates from "expo-updates";
+import { useCallback, useEffect, useState } from "react";
+import { Platform } from "react-native";
+import io from "socket.io-client";
+
+import LogoIcon from "@/assets/images/Nasakh.svg";
 import {
   LocationContext,
   RequestContext,
   RequestsContext,
   UserContext,
 } from "@/components/Contexts/Contexts";
-import { IRequest, IUser } from "@/types";
-import * as Updates from "expo-updates";
-import socket from "@/lib/socket";
-import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
+import axiosInstance from "@/lib/Instance";
 import measure from "@/lib/LatLongDistance";
-import { Platform } from "react-native";
-import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
-import Constants from "expo-constants";
+import socket from "@/lib/socket";
+import { IRequest, IUser } from "@/types";
+import { TonConnectButton, TonConnectUIProvider } from "@tonconnect/ui-react";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -122,51 +130,46 @@ export default function HomeLayout() {
       onFetchUpdateAsync().then(() => {
         Location.requestForegroundPermissionsAsync().then((data) => {
           setLocationPermission(data.status === "granted");
-          console.log(data.status);
-          if (
-            data.status !== Location.PermissionStatus.GRANTED &&
-            data.status !== Location.PermissionStatus.UNDETERMINED
-          )
-            return;
-          AsyncStorage.getItem("token").then((token) => {
-            if (!token) {
-              axiosInstance.get("/new-user").then((data) => {
-                const user = data.data;
-                AsyncStorage.setItem("token", user.token);
-                setUser(user);
-              });
-            } else {
-              axiosInstance
-                .get("/me", {
-                  headers: { Authorization: "Bearer " + token },
-                })
-                .then((data) => {
-                  setUser({ ...data.data, token });
-                  if (data.data.UserAsNajiRequests.length > 0) {
-                    setActiveRequest({
-                      request: data.data.UserAsNajiRequests?.[0],
-                      role: "NAJI",
-                    });
-                  }
-                  if (data.data.UserAsNasakhRequests.length > 0) {
-                    setActiveRequest({
-                      request: data.data.UserAsNasakhRequests?.[0],
-                      role: "NASAKH",
-                    });
-                  }
-                });
-            }
-            axiosInstance.patch(
-              "push-token",
-              { pushToken },
-              {
-                headers: {
-                  Authorization: "Bearer " + token,
-                },
-              }
-            );
-          });
         });
+      });
+      AsyncStorage.getItem("token").then((token) => {
+        if (!token) {
+          axiosInstance.get("/token").then((data) => {
+            const user = data.data;
+            AsyncStorage.setItem("token", user.token);
+            setUser(user);
+          });
+        } else {
+          axiosInstance
+            .get("/me", {
+              headers: { Authorization: "Bearer " + token },
+            })
+            .then((data) => {
+              setUser({ ...data.data, token });
+              if (data.data.UserAsNajiRequests.length > 0) {
+                setActiveRequest({
+                  request: data.data.UserAsNajiRequests?.[0],
+                  role: "NAJI",
+                });
+              }
+              if (data.data.UserAsNasakhRequests.length > 0) {
+                setActiveRequest({
+                  request: data.data.UserAsNasakhRequests?.[0],
+                  role: "NASAKH",
+                });
+              }
+            });
+        }
+        if (Platform.OS !== "web")
+          axiosInstance.patch(
+            "push-token",
+            { pushToken },
+            {
+              headers: {
+                Authorization: "Bearer " + token,
+              },
+            }
+          );
       });
     });
 
@@ -259,33 +262,44 @@ export default function HomeLayout() {
         <RequestsContext.Provider value={{ requests, setRequests }}>
           <LocationContext.Provider value={{ location, setLocation }}>
             <GluestackUIProvider config={config}>
-              <View width={"100%"} height={"100%"} onLayout={onLayoutRootView}>
-                <Stack
-                  screenOptions={{
-                    headerTitle: () => {
-                      return <Text></Text>;
-                    },
-                    headerLeft: () => (
-                      <LogoIcon
-                        style={{ marginLeft: Platform.OS === "web" ? 16 : 0 }}
-                        width={70}
-                        height={9}
-                      />
-                    ),
-                    headerBackground: () => null,
-                    headerRight: () => (
-                      <Text
-                        marginRight={Platform.OS === "web" ? 16 : 0}
-                        fontFamily="Vazirmatn_700Bold"
-                      >
-                        نام: {user.name}
-                      </Text>
-                    ),
-                  }}
-                >
-                  <Stack.Screen name="index" />
-                </Stack>
-              </View>
+              <TonConnectUIProvider
+                manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
+              >
+                <View width="100%" height="100%" onLayout={onLayoutRootView}>
+                  <Stack
+                    screenOptions={{
+                      headerTitle: () => {
+                        return <Text />;
+                      },
+                      headerLeft: () => (
+                        <LogoIcon
+                          style={{ marginLeft: Platform.OS === "web" ? 16 : 0 }}
+                          width={70}
+                          height={9}
+                        />
+                      ),
+                      headerBackground: () => null,
+                      headerRight: () => (
+                        <View
+                          display="flex"
+                          flexDirection="row-reverse"
+                          alignItems="center"
+                          gap={16}
+                        >
+                          <Text
+                            marginRight={Platform.OS === "web" ? 16 : 0}
+                            fontFamily="Vazirmatn_700Bold"
+                          >
+                            نام: {user.name}
+                          </Text>
+                        </View>
+                      ),
+                    }}
+                  >
+                    <Stack.Screen name="(tabs)" />
+                  </Stack>
+                </View>
+              </TonConnectUIProvider>
             </GluestackUIProvider>
           </LocationContext.Provider>
         </RequestsContext.Provider>

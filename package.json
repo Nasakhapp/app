@@ -24,6 +24,7 @@
     "@react-native-async-storage/async-storage": "1.21.0",
     "@react-navigation/native": "^6.0.2",
     "@rnmapbox/maps": "^10.1.10",
+    "@tonconnect/ui-react": "^2.0.5",
     "axios": "^1.6.7",
     "core-js": "3",
     "expo": "~50.0.5",

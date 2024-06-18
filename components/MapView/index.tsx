@@ -1,46 +1,53 @@
 import { IRequest } from "@/types";
+import mapboxgl from "mapbox-gl";
+import { createRef, useEffect, useRef } from "react";
 import { Card, Text } from "@gluestack-ui/themed";
-import Mapbox from "@rnmapbox/maps";
-import { CameraRef } from "@rnmapbox/maps/lib/typescript/src/components/Camera";
-import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 import LogoIcon from "@/assets/images/Nasakh.svg";
-import { useEffect } from "react";
+import ReactMapboxGl, { Layer, Feature, Marker } from "react-mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { Position } from "@rnmapbox/maps/lib/typescript/src/types/Position";
 
-Mapbox.setAccessToken(
-  "pk.eyJ1IjoiaHZtaWRyZXhhIiwiYSI6ImNsaHBhNHlnOTA1MHQzaW9iODhyMzFmNzkifQ.V_8EC5aNqfIqzM4pACfXlw"
-);
+const Map = ReactMapboxGl({
+  accessToken:
+    "pk.eyJ1IjoiaHZtaWRyZXhhIiwiYSI6ImNsaHBhNHlnOTA1MHQzaW9iODhyMzFmNzkifQ.V_8EC5aNqfIqzM4pACfXlw",
+});
 
 export default function MapView({
   activeRequest,
   requests,
   najiLocation,
   setLocation,
-  camera,
   location,
-  focus,
 }: {
   activeRequest?: {
     request?: IRequest;
     role?: "NAJI" | "NASAKH";
   };
   requests: IRequest[];
-  najiLocation: Position;
-  setLocation?: React.Dispatch<React.SetStateAction<Position | undefined>>;
-  camera: React.RefObject<CameraRef>;
-  location?: number[];
-  focus?: number;
+  najiLocation: number[];
+  setLocation?: React.Dispatch<React.SetStateAction<number[] | undefined>>;
+  location?: number[] | Position;
 }) {
+  const ref = useRef<any>();
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        setLocation?.([position.coords.longitude, position.coords.latitude]);
+      });
+    }
+  }, [navigator.geolocation]);
   useEffect(() => {
     if (
       !activeRequest?.role &&
       location &&
       !focus &&
-      camera.current?.setCamera
+      ref.current.state?.map?.flyTo
     ) {
-      camera.current?.setCamera({
-        centerCoordinate: [location[0], location[1]],
-        animationDuration: 1000,
-        zoomLevel: 16,
+      ref.current.state?.map?.flyTo({
+        center: [location[0], location[1]],
+        duration: 1000,
+        zoom: 16,
       });
     }
   }, [activeRequest, location]);
@@ -51,92 +58,91 @@ export default function MapView({
         activeRequest.request.status === "BRINGING" &&
         location
       )
-        camera.current?.fitBounds(najiLocation, location, 60, 500);
+        ref.current.state?.map?.fitBounds(
+          [najiLocation[0], najiLocation[1], location[0], location[1]],
+          { padding: 60, duration: 500 }
+        );
       else if (activeRequest?.role === "NAJI" && location)
-        camera.current?.fitBounds(
-          location,
-          [activeRequest?.request?.long, activeRequest?.request?.lat],
-          40,
-          1000
+        ref.current.state?.map?.fitBounds(
+          [
+            location[0],
+            location[1],
+            activeRequest?.request?.long,
+            activeRequest?.request?.lat,
+          ],
+
+          { padding: 40, duration: 1000 }
         );
       else if (
         activeRequest?.role === "NASAKH" &&
         activeRequest.request.status === "SEARCHING"
       )
-        camera.current?.setCamera({
-          zoomLevel: 16,
-          centerCoordinate: location,
-          animationDuration: 2000,
-          animationMode: "flyTo",
+        ref.current.state?.map?.flyTo({
+          zoom: 16,
+          center: [location?.[0], location?.[1]],
+          duration: 2000,
         });
   }, [activeRequest?.role, location, najiLocation]);
 
-  useEffect(() => {
-    if (focus && requests && requests[focus])
-      camera.current?.setCamera({
-        zoomLevel: 16,
-        centerCoordinate: [requests?.[focus].long, requests?.[focus].lat],
-        animationDuration: 2000,
-        animationMode: "flyTo",
-      });
-  }, [focus]);
-
   return (
-    <Mapbox.MapView
-      zoomEnabled
-      logoEnabled={false}
-      scrollEnabled={!activeRequest?.role}
-      scaleBarEnabled={false}
-      attributionEnabled={false}
-      style={{ flex: 1 }}
-    >
-      {!activeRequest?.request ? (
-        requests?.map((item) => (
-          <Mapbox.PointAnnotation
-            coordinate={[item.long || 0, item.lat || 0]}
-            key={`marker-${item.id}`}
-            id={`marker-${item.id}`}
+    <div style={{ width: "100%", height: "100%", display: "flex" }}>
+      <Map
+        ref={ref}
+        center={[
+          location?.[0] || 51.41580554954964,
+          location?.[1] || 35.66784310314258,
+        ]}
+        containerStyle={{ flex: 1 }}
+        style="mapbox://styles/hvmidrexa/clhqfg2ex01w701qyfi6r1i2m"
+        zoom={[16]}
+        onStyleLoad={(map) => {
+          const geo = new mapboxgl.GeolocateControl({
+            showUserLocation: true,
+            trackUserLocation: true,
+          });
+          map.resize();
+          map.addControl(geo, "top-left");
+        }}
+      >
+        {!activeRequest?.request ? (
+          requests?.map((item) => (
+            <Marker
+              coordinates={[item.long, item.lat]}
+              key={`marker-${item.id}`}
+              style={{ zIndex: 0 }}
+            >
+              <Card>
+                <LogoIcon width={50} height={6} />
+              </Card>
+            </Marker>
+          ))
+        ) : activeRequest.role === "NAJI" ? (
+          <Marker
+            style={{ zIndex: 0 }}
+            coordinates={[
+              activeRequest.request.long,
+              activeRequest.request.lat,
+            ]}
+            key={`marker-${activeRequest.request.id}`}
           >
             <Card>
               <LogoIcon width={50} height={6} />
             </Card>
-          </Mapbox.PointAnnotation>
-        ))
-      ) : activeRequest.role === "NAJI" ? (
-        <Mapbox.PointAnnotation
-          coordinate={[
-            activeRequest.request.long || 0,
-            activeRequest.request.lat || 0,
-          ]}
-          key={`marker-${activeRequest.request.id}`}
-          id={`marker-${activeRequest.request.id}`}
-        >
-          <Card>
-            <LogoIcon width={50} height={6} />
-          </Card>
-        </Mapbox.PointAnnotation>
-      ) : activeRequest?.request.status === "BRINGING" ? (
-        <Mapbox.PointAnnotation
-          coordinate={najiLocation}
-          key={`marker-${activeRequest.request.id}`}
-          id={`marker-${activeRequest.request.id}`}
-        >
-          <Card>
-            <Text fontFamily="Vazirmatn_500Medium">ناجی</Text>
-          </Card>
-        </Mapbox.PointAnnotation>
-      ) : null}
-
-      <Mapbox.UserLocation
-        onUpdate={(newLocation) =>
-          setLocation?.([
-            newLocation.coords.longitude,
-            newLocation.coords.latitude,
-          ])
-        }
-      />
-
-      <Mapbox.Camera ref={camera} />
-    </Mapbox.MapView>
+          </Marker>
+        ) : activeRequest?.request.status === "BRINGING" ? (
+          <Marker
+            style={{ zIndex: 0 }}
+            coordinates={[najiLocation[0], najiLocation[1]]}
+            key={`marker-${activeRequest.request.id}`}
+          >
+            <Card>
+              <Text fontFamily="Vazirmatn_500Medium">ناجی</Text>
+            </Card>
+          </Marker>
+        ) : (
+          <></>
+        )}
+      </Map>
+    </div>
   );
 }
