@@ -44,6 +44,7 @@ import measure from "@/lib/LatLongDistance";
 import socket from "@/lib/socket";
 import { IRequest, IUser } from "@/types";
 import { TonConnectButton, TonConnectUIProvider } from "@tonconnect/ui-react";
+import { SDKProvider } from "@tma.js/sdk-react";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -257,53 +258,57 @@ export default function HomeLayout() {
   }
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
-      <RequestContext.Provider value={{ activeRequest, setActiveRequest }}>
-        <RequestsContext.Provider value={{ requests, setRequests }}>
-          <LocationContext.Provider value={{ location, setLocation }}>
-            <GluestackUIProvider config={config}>
-              <TonConnectUIProvider
-                manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
-              >
-                <View width="100%" height="100%" onLayout={onLayoutRootView}>
-                  <Stack
-                    screenOptions={{
-                      headerTitle: () => {
-                        return <Text />;
-                      },
-                      headerLeft: () => (
-                        <LogoIcon
-                          style={{ marginLeft: Platform.OS === "web" ? 16 : 0 }}
-                          width={70}
-                          height={9}
-                        />
-                      ),
-                      headerBackground: () => null,
-                      headerRight: () => (
-                        <View
-                          display="flex"
-                          flexDirection="row-reverse"
-                          alignItems="center"
-                          gap={16}
-                        >
-                          <Text
-                            marginRight={Platform.OS === "web" ? 16 : 0}
-                            fontFamily="Vazirmatn_700Bold"
+    <SDKProvider>
+      <UserContext.Provider value={{ user, setUser }}>
+        <RequestContext.Provider value={{ activeRequest, setActiveRequest }}>
+          <RequestsContext.Provider value={{ requests, setRequests }}>
+            <LocationContext.Provider value={{ location, setLocation }}>
+              <GluestackUIProvider config={config}>
+                <TonConnectUIProvider
+                  manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
+                >
+                  <View width="100%" height="100%" onLayout={onLayoutRootView}>
+                    <Stack
+                      screenOptions={{
+                        headerTitle: () => {
+                          return <Text />;
+                        },
+                        headerLeft: () => (
+                          <LogoIcon
+                            style={{
+                              marginLeft: Platform.OS === "web" ? 16 : 0,
+                            }}
+                            width={70}
+                            height={9}
+                          />
+                        ),
+                        headerBackground: () => null,
+                        headerRight: () => (
+                          <View
+                            display="flex"
+                            flexDirection="row-reverse"
+                            alignItems="center"
+                            gap={16}
                           >
-                            نام: {user.name}
-                          </Text>
-                        </View>
-                      ),
-                    }}
-                  >
-                    <Stack.Screen name="(tabs)" />
-                  </Stack>
-                </View>
-              </TonConnectUIProvider>
-            </GluestackUIProvider>
-          </LocationContext.Provider>
-        </RequestsContext.Provider>
-      </RequestContext.Provider>
-    </UserContext.Provider>
+                            <Text
+                              marginRight={Platform.OS === "web" ? 16 : 0}
+                              fontFamily="Vazirmatn_700Bold"
+                            >
+                              نام: {user.name}
+                            </Text>
+                          </View>
+                        ),
+                      }}
+                    >
+                      <Stack.Screen name="(tabs)" />
+                    </Stack>
+                  </View>
+                </TonConnectUIProvider>
+              </GluestackUIProvider>
+            </LocationContext.Provider>
+          </RequestsContext.Provider>
+        </RequestContext.Provider>
+      </UserContext.Provider>
+    </SDKProvider>
   );
 }
