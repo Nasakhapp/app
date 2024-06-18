@@ -33,7 +33,7 @@ import MapView from "@/components/MapView";
 import RequestCard from "@/components/RequestCard";
 import axiosInstance from "@/lib/Instance";
 import socket from "@/lib/socket";
-import { useInitData } from "@tma.js/sdk-react";
+import { useInitData, useInitDataRaw } from "@tma.js/sdk-react";
 
 export default function HomePage() {
   const [focus, setFocus] = useState<number>();
@@ -46,8 +46,6 @@ export default function HomePage() {
   const [amount, setAmount] = useState<number>(0);
   const [open, setOpen] = useState<boolean>(false);
   const [najiLocation, setNajiLocation] = useState<Position>([0, 0]);
-
-  const initData = useInitData();
 
   useEffect(() => {
     if (

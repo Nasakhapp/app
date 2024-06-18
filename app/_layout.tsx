@@ -44,53 +44,9 @@ import measure from "@/lib/LatLongDistance";
 import socket from "@/lib/socket";
 import { IRequest, IUser } from "@/types";
 import { TonConnectButton, TonConnectUIProvider } from "@tonconnect/ui-react";
-import { SDKProvider } from "@tma.js/sdk-react";
+import { SDKProvider, useInitData, useInitDataRaw } from "@tma.js/sdk-react";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
-
-async function registerForPushNotificationsAsync() {
-  let token;
-
-  if (Platform.OS === "web") return "noToken";
-
-  if (Platform.OS === "android") {
-    Notifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-    });
-  }
-
-  if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== "granted") {
-      alert("Failed to get push token for push notification!");
-      return;
-    }
-    token = await Notifications.getExpoPushTokenAsync({
-      projectId: Constants.expoConfig?.extra?.eas.projectId,
-    });
-  } else {
-    alert("Must use physical device for Push Notifications");
-  }
-
-  return token?.data;
-}
-
-export default function HomeLayout() {
+function Root() {
   const [fontsLoaded, fontError] = useFonts({
     Vazirmatn_200ExtraLight,
     Vazirmatn_300Light,
@@ -106,79 +62,61 @@ export default function HomeLayout() {
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
-  const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
+
+  const initData = useInitData();
 
   const [activeRequest, setActiveRequest] = useState<{
     request?: IRequest;
     role?: "NAJI" | "NASAKH";
   }>({});
 
-  async function onFetchUpdateAsync() {
-    try {
-      const update = await Updates.checkForUpdateAsync();
-
-      if (update.isAvailable) {
-        await Updates.fetchUpdateAsync();
-        await Updates.reloadAsync();
-      }
-    } catch (error) {
-      // You can also add an alert() to see the error message in case of an error when fetching updates.
-    }
-  }
   useEffect(() => {
-    registerForPushNotificationsAsync().then((pushToken) => {
-      setExpoPushToken(pushToken);
-      onFetchUpdateAsync().then(() => {
-        Location.requestForegroundPermissionsAsync().then((data) => {
-          setLocationPermission(data.status === "granted");
-        });
-      });
-      AsyncStorage.getItem("token").then((token) => {
-        if (!token) {
-          axiosInstance.get("/token").then((data) => {
+    Location.requestForegroundPermissionsAsync().then((data) => {
+      setLocationPermission(data.status === "granted");
+    });
+    AsyncStorage.getItem("token").then((token) => {
+      if (!token) {
+        axiosInstance
+          .get("/token", {
+            headers: {
+              "telegram-data": new URLSearchParams(
+                JSON.parse(JSON.stringify(initData))
+              ).toString(),
+            },
+          })
+          .then((data) => {
             const user = data.data;
             AsyncStorage.setItem("token", user.token);
             setUser(user);
           });
-        } else {
-          axiosInstance
-            .get("/me", {
-              headers: { Authorization: "Bearer " + token },
-            })
-            .then((data) => {
-              setUser({ ...data.data, token });
-              if (data.data.UserAsNajiRequests.length > 0) {
-                setActiveRequest({
-                  request: data.data.UserAsNajiRequests?.[0],
-                  role: "NAJI",
-                });
-              }
-              if (data.data.UserAsNasakhRequests.length > 0) {
-                setActiveRequest({
-                  request: data.data.UserAsNasakhRequests?.[0],
-                  role: "NASAKH",
-                });
-              }
-            });
-        }
-        if (Platform.OS !== "web")
-          axiosInstance.patch(
-            "push-token",
-            { pushToken },
-            {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
+      } else {
+        axiosInstance
+          .get("/me", {
+            headers: { Authorization: "Bearer " + token },
+          })
+          .then((data) => {
+            setUser({ ...data.data, token });
+            if (data.data.UserAsNajiRequests.length > 0) {
+              setActiveRequest({
+                request: data.data.UserAsNajiRequests?.[0],
+                role: "NAJI",
+              });
             }
-          );
-      });
+            if (data.data.UserAsNasakhRequests.length > 0) {
+              setActiveRequest({
+                request: data.data.UserAsNasakhRequests?.[0],
+                role: "NASAKH",
+              });
+            }
+          });
+      }
     });
 
     return () => {
       socket.disconnect();
       socket.removeAllListeners();
     };
-  }, []);
+  }, [initData]);
   useEffect(() => {
     if (user.token)
       Location.getCurrentPositionAsync({}).then((resp) => {
@@ -246,8 +184,7 @@ export default function HomeLayout() {
       user.token &&
       isConnected &&
       location?.[0] &&
-      location?.[1] &&
-      expoPushToken
+      location?.[1]
     ) {
       await SplashScreen.hideAsync();
     }
@@ -256,59 +193,64 @@ export default function HomeLayout() {
   if (!fontsLoaded && !fontError && !locationPermission) {
     return null;
   }
+  return (
+    <UserContext.Provider value={{ user, setUser }}>
+      <RequestContext.Provider value={{ activeRequest, setActiveRequest }}>
+        <RequestsContext.Provider value={{ requests, setRequests }}>
+          <LocationContext.Provider value={{ location, setLocation }}>
+            <GluestackUIProvider config={config}>
+              <TonConnectUIProvider
+                manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
+              >
+                <View width="100%" height="100%" onLayout={onLayoutRootView}>
+                  <Stack
+                    screenOptions={{
+                      headerTitle: () => {
+                        return <Text />;
+                      },
+                      headerLeft: () => (
+                        <LogoIcon
+                          style={{
+                            marginLeft: Platform.OS === "web" ? 16 : 0,
+                          }}
+                          width={70}
+                          height={9}
+                        />
+                      ),
+                      headerBackground: () => null,
+                      headerRight: () => (
+                        <View
+                          display="flex"
+                          flexDirection="row-reverse"
+                          alignItems="center"
+                          gap={16}
+                        >
+                          <Text
+                            marginRight={Platform.OS === "web" ? 16 : 0}
+                            fontFamily="Vazirmatn_700Bold"
+                          >
+                            نام: {user.name}
+                          </Text>
+                        </View>
+                      ),
+                    }}
+                  >
+                    <Stack.Screen name="(tabs)" />
+                  </Stack>
+                </View>
+              </TonConnectUIProvider>
+            </GluestackUIProvider>
+          </LocationContext.Provider>
+        </RequestsContext.Provider>
+      </RequestContext.Provider>
+    </UserContext.Provider>
+  );
+}
 
+export default function HomeLayout() {
   return (
     <SDKProvider>
-      <UserContext.Provider value={{ user, setUser }}>
-        <RequestContext.Provider value={{ activeRequest, setActiveRequest }}>
-          <RequestsContext.Provider value={{ requests, setRequests }}>
-            <LocationContext.Provider value={{ location, setLocation }}>
-              <GluestackUIProvider config={config}>
-                <TonConnectUIProvider
-                  manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
-                >
-                  <View width="100%" height="100%" onLayout={onLayoutRootView}>
-                    <Stack
-                      screenOptions={{
-                        headerTitle: () => {
-                          return <Text />;
-                        },
-                        headerLeft: () => (
-                          <LogoIcon
-                            style={{
-                              marginLeft: Platform.OS === "web" ? 16 : 0,
-                            }}
-                            width={70}
-                            height={9}
-                          />
-                        ),
-                        headerBackground: () => null,
-                        headerRight: () => (
-                          <View
-                            display="flex"
-                            flexDirection="row-reverse"
-                            alignItems="center"
-                            gap={16}
-                          >
-                            <Text
-                              marginRight={Platform.OS === "web" ? 16 : 0}
-                              fontFamily="Vazirmatn_700Bold"
-                            >
-                              نام: {user.name}
-                            </Text>
-                          </View>
-                        ),
-                      }}
-                    >
-                      <Stack.Screen name="(tabs)" />
-                    </Stack>
-                  </View>
-                </TonConnectUIProvider>
-              </GluestackUIProvider>
-            </LocationContext.Provider>
-          </RequestsContext.Provider>
-        </RequestContext.Provider>
-      </UserContext.Provider>
+      <Root />
     </SDKProvider>
   );
 }
