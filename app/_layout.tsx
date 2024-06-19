@@ -129,7 +129,7 @@ function Root() {
       socket.disconnect();
       socket.removeAllListeners();
     };
-  }, [initData]);
+  }, [initDataRaw]);
   useEffect(() => {
     if (user.token)
       Location.getCurrentPositionAsync({}).then((resp) => {
