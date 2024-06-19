@@ -50,6 +50,7 @@ import {
   useInitData,
   useInitDataRaw,
 } from "@tma.js/sdk-react";
+import { AxiosHeaders } from "axios";
 
 function Root() {
   const [fontsLoaded, fontError] = useFonts({
@@ -80,19 +81,21 @@ function Root() {
     Location.requestForegroundPermissionsAsync().then((data) => {
       setLocationPermission(data.status === "granted");
     });
-    console.log(
-      new URLSearchParams(JSON.parse(JSON.stringify(initData))).toString()
-    );
+    console.log(new URLSearchParams(initData as any).toString());
     cloudStorage.get("token").then((token) => {
       if (!token) {
         axiosInstance
-          .get("/token", {
-            headers: {
-              "telegram-data": new URLSearchParams(
-                JSON.parse(JSON.stringify(initData))
-              ).toString(),
-            },
-          })
+          .post(
+            "/token",
+            {},
+            {
+              headers: {
+                "telegram-data": new URLSearchParams(
+                  initData as any
+                ).toString(),
+              },
+            }
+          )
           .then((data) => {
             const user = data.data;
             cloudStorage.set("token", user.token);
