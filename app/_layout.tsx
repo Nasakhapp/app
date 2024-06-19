@@ -70,7 +70,7 @@ function Root() {
   const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
 
-  const { result: initData } = useInitDataRaw();
+  const initData = useInitDataRaw();
   const cloudStorage = useCloudStorage();
 
   const [activeRequest, setActiveRequest] = useState<{
