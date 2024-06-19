@@ -78,8 +78,6 @@ function Root() {
     role?: "NAJI" | "NASAKH";
   }>({});
 
-  console.log(initData);
-
   useEffect(() => {
     Location.requestForegroundPermissionsAsync().then((data) => {
       setLocationPermission(data.status === "granted");
@@ -92,7 +90,7 @@ function Root() {
             {},
             {
               headers: {
-                "telegram-data": JSON.stringify(initData),
+                Authorization: `tma ${initData}`,
               },
             }
           )
