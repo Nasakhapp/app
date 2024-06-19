@@ -70,7 +70,7 @@ function Root() {
   const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
 
-  const initData = useInitData();
+  const initData = useInitDataRaw();
   const cloudStorage = useCloudStorage();
 
   const [activeRequest, setActiveRequest] = useState<{
@@ -90,7 +90,7 @@ function Root() {
             {},
             {
               headers: {
-                "telegram-data": JSON.stringify({ ...initData }),
+                "telegram-data": JSON.stringify({ ...initData.result }),
               },
             }
           )
