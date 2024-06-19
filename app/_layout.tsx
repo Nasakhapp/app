@@ -50,6 +50,7 @@ import {
   useCloudStorage,
   useInitData,
   useInitDataRaw,
+  useLaunchParams,
 } from "@tma.js/sdk-react";
 import { AxiosHeaders } from "axios";
 
@@ -70,7 +71,7 @@ function Root() {
   const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
 
-  const initData = useInitData();
+  const { initDataRaw } = useLaunchParams();
   const cloudStorage = useCloudStorage();
 
   const [activeRequest, setActiveRequest] = useState<{
@@ -78,7 +79,7 @@ function Root() {
     role?: "NAJI" | "NASAKH";
   }>({});
 
-  console.log(JSON.stringify(initData));
+  console.log(initDataRaw);
 
   useEffect(() => {
     Location.requestForegroundPermissionsAsync().then((data) => {
@@ -92,7 +93,7 @@ function Root() {
             {},
             {
               headers: {
-                "telegram-data": JSON.stringify({ ...initData }),
+                "telegram-data": initDataRaw,
               },
             }
           )
