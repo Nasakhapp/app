@@ -90,7 +90,7 @@ function Root() {
             {},
             {
               headers: {
-                "telegram-data": JSON.stringify(initData),
+                "telegram-data": JSON.stringify({ ...initData }),
               },
             }
           )
