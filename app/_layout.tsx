@@ -45,6 +45,7 @@ import socket from "@/lib/socket";
 import { IRequest, IUser } from "@/types";
 import { TonConnectButton, TonConnectUIProvider } from "@tonconnect/ui-react";
 import {
+  retrieveLaunchParams,
   SDKProvider,
   useCloudStorage,
   useInitData,
@@ -69,7 +70,7 @@ function Root() {
   const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
 
-  const initData = useInitDataRaw();
+  const { result: initData } = useInitDataRaw();
   const cloudStorage = useCloudStorage();
 
   const [activeRequest, setActiveRequest] = useState<{
@@ -77,11 +78,12 @@ function Root() {
     role?: "NAJI" | "NASAKH";
   }>({});
 
+  console.log(initData);
+
   useEffect(() => {
     Location.requestForegroundPermissionsAsync().then((data) => {
       setLocationPermission(data.status === "granted");
     });
-    console.log(new URLSearchParams(initData as any).toString());
     cloudStorage.get("token").then((token) => {
       if (!token) {
         axiosInstance
@@ -90,7 +92,7 @@ function Root() {
             {},
             {
               headers: {
-                "telegram-data": initData as any,
+                "telegram-data": JSON.stringify(initData),
               },
             }
           )
