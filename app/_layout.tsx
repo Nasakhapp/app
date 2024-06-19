@@ -78,7 +78,7 @@ function Root() {
     role?: "NAJI" | "NASAKH";
   }>({});
 
-  console.log(JSON.stringify(initData));
+  console.log(JSON.stringify(initData.result));
 
   useEffect(() => {
     Location.requestForegroundPermissionsAsync().then((data) => {
