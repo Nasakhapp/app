@@ -70,7 +70,7 @@ function Root() {
   const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
 
-  const initData = useInitDataRaw();
+  const initData = useInitData();
   const cloudStorage = useCloudStorage();
 
   const [activeRequest, setActiveRequest] = useState<{
@@ -78,7 +78,7 @@ function Root() {
     role?: "NAJI" | "NASAKH";
   }>({});
 
-  console.log(JSON.stringify(initData.result));
+  console.log(JSON.stringify(initData));
 
   useEffect(() => {
     Location.requestForegroundPermissionsAsync().then((data) => {
@@ -92,7 +92,7 @@ function Root() {
             {},
             {
               headers: {
-                "telegram-data": JSON.stringify({ ...initData.result }),
+                "telegram-data": JSON.stringify({ ...initData }),
               },
             }
           )
