@@ -4,6 +4,7 @@ export interface IUser {
   token?: string;
   UserAsNajiRequests?: IRequest[] | null;
   UserAsNasakhRequests?: IRequest[] | null;
+  walletAddress?: string;
 }
 
 export interface IRequest {

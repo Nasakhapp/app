@@ -54,6 +54,8 @@ import {
 } from "@tma.js/sdk-react";
 import { AxiosHeaders } from "axios";
 
+import "./mockEnv";
+
 function Root() {
   const [fontsLoaded, fontError] = useFonts({
     Vazirmatn_200ExtraLight,
@@ -70,61 +72,80 @@ function Root() {
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
-
   const { initDataRaw } = useLaunchParams();
   const cloudStorage = useCloudStorage();
-
   const [activeRequest, setActiveRequest] = useState<{
     request?: IRequest;
     role?: "NAJI" | "NASAKH";
   }>({});
 
-  console.log(initDataRaw);
+  function Auth(token: string | null) {
+    if (!token) {
+      axiosInstance
+        .post(
+          "/token",
+          {},
+          {
+            headers: {
+              "telegram-data": initDataRaw,
+            },
+          }
+        )
+        .then((data) => {
+          const user = data.data;
+          process.env.NODE_ENV === "development"
+            ? AsyncStorage.setItem("token", user.token)
+            : cloudStorage.set("token", user.token);
+          setUser(user);
+          if (data.data.UserAsNajiRequests.length > 0) {
+            setActiveRequest({
+              request: data.data.UserAsNajiRequests?.[0],
+              role: "NAJI",
+            });
+          }
+          if (data.data.UserAsNasakhRequests.length > 0) {
+            setActiveRequest({
+              request: data.data.UserAsNasakhRequests?.[0],
+              role: "NASAKH",
+            });
+          }
+        });
+    } else {
+      axiosInstance
+        .get("/me", {
+          headers: { Authorization: "Bearer " + token },
+        })
+        .then((data) => {
+          setUser({ ...data.data, token });
+          if (data.data.UserAsNajiRequests.length > 0) {
+            setActiveRequest({
+              request: data.data.UserAsNajiRequests?.[0],
+              role: "NAJI",
+            });
+          }
+          if (data.data.UserAsNasakhRequests.length > 0) {
+            setActiveRequest({
+              request: data.data.UserAsNasakhRequests?.[0],
+              role: "NASAKH",
+            });
+          }
+        });
+    }
+  }
 
   useEffect(() => {
     Location.requestForegroundPermissionsAsync().then((data) => {
       setLocationPermission(data.status === "granted");
     });
-    cloudStorage.get("token").then((token) => {
-      if (!token) {
-        axiosInstance
-          .post(
-            "/token",
-            {},
-            {
-              headers: {
-                "telegram-data": initDataRaw,
-              },
-            }
-          )
-          .then((data) => {
-            const user = data.data;
-            cloudStorage.set("token", user.token);
-            setUser(user);
-          });
-      } else {
-        axiosInstance
-          .get("/me", {
-            headers: { Authorization: "Bearer " + token },
-          })
-          .then((data) => {
-            setUser({ ...data.data, token });
-            if (data.data.UserAsNajiRequests.length > 0) {
-              setActiveRequest({
-                request: data.data.UserAsNajiRequests?.[0],
-                role: "NAJI",
-              });
-            }
-            if (data.data.UserAsNasakhRequests.length > 0) {
-              setActiveRequest({
-                request: data.data.UserAsNasakhRequests?.[0],
-                role: "NASAKH",
-              });
-            }
-          });
-      }
-    });
-
+    if (process.env.NODE_ENV === "development") {
+      AsyncStorage.getItem("token").then((token) => {
+        Auth(token);
+      });
+    } else {
+      cloudStorage.get("token").then((token) => {
+        Auth(token);
+      });
+    }
     return () => {
       socket.disconnect();
       socket.removeAllListeners();
@@ -136,7 +157,7 @@ function Root() {
         setLocation([resp.coords.longitude, resp.coords.latitude]);
         axiosInstance
           .get(
-            `/near-nasakhs?lat=${resp.coords.latitude}&long=${resp.coords.longitude}`,
+            `/nasakh/near?lat=${resp.coords.latitude}&long=${resp.coords.longitude}`,
             { headers: { Authorization: "Bearer " + user.token } }
           )
           .then((data) => {

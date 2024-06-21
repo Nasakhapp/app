@@ -7,20 +7,27 @@ export default function TabLayout() {
       <Tabs.Screen
         options={{
           headerShown: false,
-          tabBarLabel: (props) => (
-            <Text fontFamily="Vazirmatn_700Bold">رفع نسخی</Text>
+          tabBarIcon: () => (
+            <Text fontFamily="Vazirmatn_700Bold" fontSize={16}>
+              رفع نسخی
+            </Text>
           ),
-          tabBarIcon: () => null,
+          tabBarIconStyle: { width: "100%" },
+          tabBarShowLabel: false,
         }}
         name="index"
       />
       <Tabs.Screen
         options={{
           headerShown: false,
-          tabBarLabel: (props) => (
-            <Text fontFamily="Vazirmatn_700Bold">کیف پول</Text>
+          tabBarIcon: (props) => (
+            <Text fontFamily="Vazirmatn_700Bold" fontSize={16}>
+              کیف پول
+            </Text>
           ),
-          tabBarIcon: () => null,
+          tabBarIconStyle: { width: "100%" },
+
+          tabBarShowLabel: false,
         }}
         name="wallet"
       />

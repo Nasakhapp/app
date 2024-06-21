@@ -144,13 +144,16 @@ export default function HomePage() {
             najiLocation={najiLocation}
             role={activeRequest.role}
             onDone={() => {
-              axiosInstance.get(`/request/${activeRequest.request?.id}/done`, {
-                headers: { Authorization: "Bearer " + user?.token },
-              });
+              axiosInstance.get(
+                `/nasakh/request/${activeRequest.request?.id}/done`,
+                {
+                  headers: { Authorization: "Bearer " + user?.token },
+                }
+              );
             }}
             onReject={() => {
               axiosInstance.get(
-                `/request/${activeRequest.request?.id}/reject`,
+                `/nasakh/request/${activeRequest.request?.id}/reject`,
                 {
                   headers: { Authorization: "Bearer " + user?.token },
                 }
@@ -158,7 +161,7 @@ export default function HomePage() {
             }}
             onCancel={() =>
               axiosInstance.get(
-                `/request/${activeRequest.request?.id}/cancel`,
+                `/nasakh/request/${activeRequest.request?.id}/cancel`,
                 {
                   headers: { Authorization: "Bearer " + user?.token },
                 }
@@ -195,7 +198,7 @@ export default function HomePage() {
                       width={Dimensions.get("screen").width * 0.7}
                       location={location}
                       onAccept={() => {
-                        axiosInstance.get(`/request/${item.id}/accept`, {
+                        axiosInstance.get(`/nasakh/request/${item.id}/accept`, {
                           headers: { Authorization: "Bearer " + user?.token },
                         });
                       }}
@@ -260,7 +263,7 @@ export default function HomePage() {
               onPress={() =>
                 axiosInstance
                   .post(
-                    `/nasakham`,
+                    `/nasakh/request/`,
                     { amount, lat: location?.[1], long: location?.[0] },
                     {
                       headers: {

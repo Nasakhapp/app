@@ -6,7 +6,7 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web",
+    "web": "NODE_ENV=development expo start --web",
     "test": "jest --watchAll",
     "build:apk": "eas build -p android --profile preview",
     "build:web": "NODE_ENV=production npx expo export -p web && npx workbox-cli generateSW workbox-config.js"
