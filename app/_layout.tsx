@@ -72,7 +72,7 @@ function Root() {
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [location, setLocation] = useState<Position>();
   const [isConnected, setConnected] = useState<boolean>(false);
-  const { initDataRaw } = useLaunchParams();
+  const { initDataRaw, initData } = useLaunchParams();
   const cloudStorage = useCloudStorage();
   const [activeRequest, setActiveRequest] = useState<{
     request?: IRequest;
@@ -128,6 +128,17 @@ function Root() {
               request: data.data.UserAsNasakhRequests?.[0],
               role: "NASAKH",
             });
+          }
+          if (
+            initData?.chat?.id &&
+            (!data.data.telegramChatId ||
+              data.data?.telegramChatId !== initData.chat.id)
+          ) {
+            axiosInstance.put(
+              "/me/telegram-chat-id",
+              { telegramChatId: initData.chat.id },
+              { headers: { Authorization: "Bearer " + token } }
+            );
           }
         });
     }
