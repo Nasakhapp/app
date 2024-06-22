@@ -7,8 +7,37 @@ export default function TabLayout() {
       <Tabs.Screen
         options={{
           headerShown: false,
+          tabBarIcon: (props) => (
+            <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
+              دکه
+            </Text>
+          ),
+          tabBarIconStyle: { width: "100%" },
+
+          tabBarShowLabel: false,
+        }}
+        name="shop"
+      />
+      <Tabs.Screen
+        options={{
+          headerShown: false,
+          tabBarIcon: (props) => (
+            <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
+              پول مفت
+            </Text>
+          ),
+          tabBarIconStyle: { width: "100%" },
+
+          tabBarShowLabel: false,
+          unmountOnBlur: true,
+        }}
+        name="wallet"
+      />
+      <Tabs.Screen
+        options={{
+          headerShown: false,
           tabBarIcon: () => (
-            <Text fontFamily="Vazirmatn_700Bold" fontSize={16}>
+            <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
               رفع نسخی
             </Text>
           ),
@@ -16,20 +45,6 @@ export default function TabLayout() {
           tabBarShowLabel: false,
         }}
         name="index"
-      />
-      <Tabs.Screen
-        options={{
-          headerShown: false,
-          tabBarIcon: (props) => (
-            <Text fontFamily="Vazirmatn_700Bold" fontSize={16}>
-              کیف پول
-            </Text>
-          ),
-          tabBarIconStyle: { width: "100%" },
-
-          tabBarShowLabel: false,
-        }}
-        name="wallet"
       />
     </Tabs>
   );

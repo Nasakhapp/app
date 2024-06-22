@@ -106,26 +106,23 @@ export default function HomePage() {
       {!activeRequest?.role ? (
         <Button
           position="absolute"
-          top={16}
-          right={16}
+          top={8}
+          right={8}
           backgroundColor="$black"
           onPress={() => setOpen(true)}
           disabled={!location?.[0] && !location?.[1]}
         >
           {!location?.[0] && !location?.[1] ? (
             <View display="flex" flexDirection="row-reverse" gap={16}>
-              <Text fontFamily="Vazirmatn_500Medium" color="$white">
-                درحال موقعیت یابی
+              <Text size="sm" fontFamily="Vazirmatn_500Medium" color="$white">
+                بزار ببینم کجایی
               </Text>
-              <Spinner color="white" />
+              <Spinner size={"small"} color="white" />
             </View>
           ) : (
-            <FontAwesome6
-              name="hand-holding"
-              size={24}
-              color="#fff"
-              style={{ marginTop: -12 }}
-            />
+            <Text size="sm" fontFamily="Vazirmatn_500Medium" color="$white">
+              نسخم
+            </Text>
           )}
         </Button>
       ) : null}
@@ -176,7 +173,7 @@ export default function HomePage() {
               marginBottom={12}
               marginRight={16}
             >
-              نسخ های نزدیک شما:
+              نسخ های دورت:
             </Text>
             {requests?.length && requests?.length > 0 ? (
               <Carousel
