@@ -12,11 +12,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Create .env file
-        uses: ozaytsev86/create-env-file@v1
-        with:
-          EXPO_PUBLIC_BASE_URL: ${{ secrets.API_URL }}
-
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
