@@ -15,7 +15,7 @@ jobs:
       - name: Create .env file
         uses: ozaytsev86/create-env-file@v1
         with:
-          EXPO_PUBLIC_BASE_URL: https://nasakh.app/api
+          EXPO_PUBLIC_BASE_URL: ${{ secrets.API_URL }}
 
       - name: Setup Node
         uses: actions/setup-node@v3
