@@ -33,9 +33,8 @@ export default function MatePage() {
       await requestMicrophonePermissionsAsync();
     })();
 
-    if (socket.id) {
-      console.log(socket.id);
-      const peer = new Peer(socket.id, {
+    socket.on("matched", (partnerSocketId) => {
+      const peer = new Peer(socket.id || "", {
         host:
           process.env.NODE_ENV === "production" ? "nasakh.app" : "localhost",
         port: process.env.NODE_ENV === "production" ? 443 : 4000,
@@ -44,18 +43,16 @@ export default function MatePage() {
       peer.on("open", (id) => {
         setMyPeer(peer);
       });
-
-      socket.on("matched", (partnerSocketId) => {
-        setLoading(false);
-        setPartnerPeerId(partnerSocketId);
-      });
-      socket.on("matching", () => {
-        setLoading(true);
-      });
-      socket.on("match-ended", () => {
-        setPartnerPeerId(undefined);
-      });
-    }
+      setLoading(false);
+      setPartnerPeerId(partnerSocketId);
+    });
+    socket.on("matching", () => {
+      setLoading(true);
+    });
+    socket.on("match-ended", () => {
+      setPartnerPeerId(undefined);
+      myPeer?.destroy();
+    });
 
     return () => {
       setPartnerPeerId(undefined);
