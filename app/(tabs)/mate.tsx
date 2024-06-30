@@ -36,7 +36,10 @@ export default function MatePage() {
     if (socket.id) {
       console.log(socket.id);
       const peer = new Peer(socket.id, {
-        host: process.env.EXPO_PUBLIC_BASE_URL,
+        host:
+          process.env.NODE_ENV === "production"
+            ? "nasakh.app"
+            : "localhost:4000",
         port: process.env.NODE_ENV === "production" ? 443 : 4000,
         path: "/peerjs",
       });
