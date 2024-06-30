@@ -35,7 +35,7 @@ export default function MatePage() {
 
     if (socket.id) {
       console.log(socket.id);
-      const peer = new Peer(socket.id || "", {
+      const peer = new Peer(socket.id, {
         host: "/",
         port: 4000,
         path: "/",
@@ -62,7 +62,7 @@ export default function MatePage() {
       socket.emit("end-match", partnerPeerId);
       myPeer?.destroy();
     };
-  }, []);
+  }, [socket.id]);
 
   useEffect(() => {
     if (myPeer && myStream)
