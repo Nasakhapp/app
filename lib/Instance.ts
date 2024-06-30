@@ -1,7 +1,10 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: `${process.env.EXPO_PUBLIC_BASE_URL}/api`,
+  baseURL:
+    process.env.NODE_ENV === "production"
+      ? `${process.env.EXPO_PUBLIC_BASE_URL}/api`
+      : `${process.env.EXPO_PUBLIC_BASE_URL}`,
 });
 
 axiosInstance.interceptors.response.use(

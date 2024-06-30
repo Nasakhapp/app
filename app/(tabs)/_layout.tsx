@@ -18,6 +18,7 @@ export default function TabLayout() {
         }}
         name="shop"
       />
+
       <Tabs.Screen
         options={{
           headerShown: false,
@@ -32,6 +33,20 @@ export default function TabLayout() {
           unmountOnBlur: true,
         }}
         name="wallet"
+      />
+      <Tabs.Screen
+        options={{
+          headerShown: false,
+          tabBarIcon: (props) => (
+            <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
+              هم‌کام
+            </Text>
+          ),
+          tabBarIconStyle: { width: "100%" },
+
+          tabBarShowLabel: false,
+        }}
+        name="mate"
       />
       <Tabs.Screen
         options={{
