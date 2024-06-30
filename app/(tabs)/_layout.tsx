@@ -43,8 +43,8 @@ export default function TabLayout() {
             </Text>
           ),
           tabBarIconStyle: { width: "100%" },
-
           tabBarShowLabel: false,
+          unmountOnBlur: true,
         }}
         name="mate"
       />
