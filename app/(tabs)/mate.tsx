@@ -37,7 +37,7 @@ export default function MatePage() {
       console.log(socket.id);
       const peer = new Peer(socket.id, {
         host: process.env.EXPO_PUBLIC_BASE_URL,
-        port: process.env.NODE_ENV === "production" ? 80 : 4000,
+        port: process.env.NODE_ENV === "production" ? 443 : 4000,
         path: "/peerjs",
       });
       peer.on("open", (id) => {
