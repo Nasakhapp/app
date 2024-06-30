@@ -37,15 +37,12 @@ export default function MatePage() {
       console.log(socket.id);
       const peer = new Peer(socket.id, {
         host:
-          process.env.NODE_ENV === "production"
-            ? "nasakh.app"
-            : "localhost:4000",
+          process.env.NODE_ENV === "production" ? "nasakh.app" : "localhost",
         port: process.env.NODE_ENV === "production" ? 443 : 4000,
         path: "/peerjs",
       });
       peer.on("open", (id) => {
         setMyPeer(peer);
-        console.log(id);
       });
 
       socket.on("matched", (partnerSocketId) => {
@@ -105,9 +102,25 @@ export default function MatePage() {
   }, [myPeer, partnerPeerId, myStream]);
   return (
     <View display="flex" w="$full" h="$full" gap={8}>
-      <video ref={remoteVideoRef} style={{ flex: 1 }} />
-      <video ref={localVideoRef} style={{ flex: 1 }} muted />
-      <View flexDirection="row" gap={8} display="flex" w={"$full"} padding={16}>
+      <video ref={remoteVideoRef} style={{ flex: 1, maxWidth: "100vw" }} />
+      <video
+        ref={localVideoRef}
+        style={{
+          position: "absolute",
+          bottom: 16,
+          height: "20vh",
+          left: 16,
+        }}
+        muted
+      />
+      <View
+        position="absolute"
+        flexDirection="row"
+        gap={8}
+        display="flex"
+        w={"$full"}
+        padding={16}
+      >
         <Button
           flex={3}
           onPress={() => {
