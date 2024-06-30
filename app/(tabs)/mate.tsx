@@ -33,7 +33,8 @@ export default function MatePage() {
       await requestMicrophonePermissionsAsync();
     })();
 
-    socket.on("connect", () => {
+    if (socket.id) {
+      console.log(socket.id);
       const peer = new Peer(socket.id || "", {
         host: "/",
         port: 4000,
@@ -54,7 +55,7 @@ export default function MatePage() {
       socket.on("match-ended", () => {
         setPartnerPeerId(undefined);
       });
-    });
+    }
 
     return () => {
       setPartnerPeerId(undefined);
