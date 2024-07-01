@@ -55,12 +55,14 @@ export default function MatePage() {
     socket.on("match-ended", () => {
       setPartnerPeerId(undefined);
       myPeer?.disconnect();
+      setMyPeer(undefined);
     });
 
     return () => {
       setPartnerPeerId(undefined);
       socket.emit("end-match", partnerPeerId);
       myPeer?.disconnect();
+      setMyPeer(undefined);
     };
   }, []);
 
