@@ -22,7 +22,6 @@ import { Ionicons } from "@expo/vector-icons";
 export default function MatePage() {
   const [myPeer, setMyPeer] = useState<Peer>();
   const [partnerPeerId, setPartnerPeerId] = useState<string>();
-  const [videoCall, setVideoCall] = useState<boolean>(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -81,7 +80,7 @@ export default function MatePage() {
 
   useEffect(() => {
     navigator.mediaDevices
-      .getUserMedia({ video: videoCall, audio: true })
+      .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         setMyStream(stream);
         if (localVideoRef.current) {
@@ -89,7 +88,7 @@ export default function MatePage() {
           localVideoRef.current.play();
         }
       });
-  }, [navigator, videoCall]);
+  }, [navigator]);
 
   useEffect(() => {
     if (myPeer && partnerPeerId && myStream) {
@@ -105,17 +104,21 @@ export default function MatePage() {
   return (
     <View display="flex" w="$full" h="$full" gap={4}>
       <Text
-        fontFamily="Vazirmatn_500Medium"
-        fontSize={"$sm"}
+        fontFamily="Vazirmatn_700Bold"
+        fontSize={"$md"}
         paddingHorizontal={16}
       >
         {loading
-          ? "وایسا یکی گردنت بگیره"
+          ? "وایسا یکی گردنت بگیره..."
           : partnerPeerId
             ? "گردن گرفتنت"
             : "دکمه سرچ پایین رو بزن تا گردن بگیرنت"}
       </Text>
-      <video ref={remoteVideoRef} style={{ flex: 1, maxWidth: "100vw" }} />
+      <video
+        poster="/assets/images/logo-small.png"
+        ref={remoteVideoRef}
+        style={{ flex: 1, maxWidth: "100vw" }}
+      />
       <video
         ref={localVideoRef}
         style={{
@@ -136,13 +139,6 @@ export default function MatePage() {
         bottom={16}
         right={16}
       >
-        <Button
-          rounded={"$full"}
-          onPress={() => setVideoCall(!videoCall)}
-          bgColor={!videoCall ? "black" : "#f7941d"}
-        >
-          <Ionicons size={16} color={"white"} name="camera" />
-        </Button>
         <Button
           onPress={() => {
             if (!partnerPeerId) socket.emit("find-match");
