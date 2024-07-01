@@ -13,6 +13,7 @@ import {
   Icon,
   SearchIcon,
   Spinner,
+  Text,
   View,
 } from "@gluestack-ui/themed";
 
@@ -29,8 +30,10 @@ export default function MatePage() {
 
   useEffect(() => {
     (async () => {
-      await requestCameraPermissionsAsync();
-      await requestMicrophonePermissionsAsync();
+      const cameraPermission = await getCameraPermissionsAsync();
+      const micPermission = await getMicrophonePermissionsAsync();
+      if (!cameraPermission.granted) await requestCameraPermissionsAsync();
+      if (!micPermission.granted) await requestMicrophonePermissionsAsync();
     })();
 
     socket.on("matched", (partnerSocketId) => {
@@ -51,15 +54,15 @@ export default function MatePage() {
     });
     socket.on("match-ended", () => {
       setPartnerPeerId(undefined);
-      myPeer?.destroy();
+      myPeer?.disconnect();
     });
 
     return () => {
       setPartnerPeerId(undefined);
       socket.emit("end-match", partnerPeerId);
-      myPeer?.destroy();
+      myPeer?.disconnect();
     };
-  }, [socket.id]);
+  }, []);
 
   useEffect(() => {
     if (myPeer && myStream)
@@ -98,7 +101,18 @@ export default function MatePage() {
     }
   }, [myPeer, partnerPeerId, myStream]);
   return (
-    <View display="flex" w="$full" h="$full" gap={8}>
+    <View display="flex" w="$full" h="$full" gap={4}>
+      <Text
+        fontFamily="Vazirmatn_500Medium"
+        fontSize={"$sm"}
+        paddingHorizontal={16}
+      >
+        {loading
+          ? "وایسا یکی گردنت بگیره"
+          : partnerPeerId
+            ? "گردن گرفتنت"
+            : "دکمه سرچ پایین رو بزن تا گردن بگیرنت"}
+      </Text>
       <video ref={remoteVideoRef} style={{ flex: 1, maxWidth: "100vw" }} />
       <video
         ref={localVideoRef}
@@ -106,20 +120,28 @@ export default function MatePage() {
           position: "absolute",
           bottom: 16,
           height: "20vh",
+          width: "20vw",
           left: 16,
         }}
         muted
+        playsInline
       />
       <View
         position="absolute"
-        flexDirection="row"
+        flexDirection="column"
         gap={8}
         display="flex"
-        w={"$full"}
-        padding={16}
+        bottom={16}
+        right={16}
       >
         <Button
-          flex={3}
+          rounded={"$full"}
+          onPress={() => setVideoCall(!videoCall)}
+          bgColor={!videoCall ? "black" : "#f7941d"}
+        >
+          <Ionicons size={16} color={"white"} name="camera" />
+        </Button>
+        <Button
           onPress={() => {
             if (!partnerPeerId) socket.emit("find-match");
             else {
@@ -135,13 +157,6 @@ export default function MatePage() {
           ) : (
             <SearchIcon color="$white" />
           )}
-        </Button>
-
-        <Button
-          onPress={() => setVideoCall(!videoCall)}
-          bgColor={!videoCall ? "black" : "#f7941d"}
-        >
-          <Ionicons size={16} color={"white"} name="camera" />
         </Button>
       </View>
     </View>
