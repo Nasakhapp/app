@@ -65,9 +65,9 @@ export default function MatePage() {
     return () => {
       socket.emit("end-match", partnerPeerId);
       setPartnerPeerId(undefined);
-      myPeer?.disconnect();
       myCall?.close();
       partnerCall?.close();
+      myPeer?.disconnect();
       setMyCall(undefined);
       setPartnerCall(undefined);
       setMyPeer(undefined);
@@ -79,16 +79,21 @@ export default function MatePage() {
       myPeer.on("call", (call) => {
         if (!partnerCall) {
           setPartnerCall(call);
-          call.answer(myStream);
-          call.on("stream", (remoteStream) => {
-            if (remoteVideoRef.current) {
-              remoteVideoRef.current.srcObject = remoteStream;
-              remoteVideoRef.current.play();
-            }
-          });
         }
       });
   }, [myPeer, myStream]);
+
+  useEffect(() => {
+    if (partnerCall && myStream) {
+      partnerCall.answer(myStream);
+      partnerCall.on("stream", (remoteStream) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+          remoteVideoRef.current.play();
+        }
+      });
+    }
+  }, [partnerCall, myStream]);
 
   useEffect(() => {
     navigator.mediaDevices
@@ -106,14 +111,18 @@ export default function MatePage() {
     if (myPeer && partnerPeerId && myStream && !myCall) {
       const call = myPeer.call(partnerPeerId, myStream);
       setMyCall(call);
-      call.on("stream", (remoteStream) => {
+    }
+  }, [myPeer, partnerPeerId, myStream]);
+
+  useEffect(() => {
+    if (myCall)
+      myCall.on("stream", (remoteStream) => {
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = remoteStream;
           remoteVideoRef.current.play();
         }
       });
-    }
-  }, [myPeer, partnerPeerId, myStream]);
+  }, [myCall]);
   return (
     <View display="flex" w="$full" h="$full" gap={4}>
       <Text
