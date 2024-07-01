@@ -1,5 +1,5 @@
 import socket from "@/lib/socket";
-import Peer from "peerjs";
+import Peer, { MediaConnection } from "peerjs";
 import { useEffect, useRef, useState } from "react";
 import {
   getCameraPermissionsAsync,
@@ -26,6 +26,8 @@ export default function MatePage() {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [myStream, setMyStream] = useState<MediaStream>();
+  const [myCall, setMyCall] = useState<MediaConnection>();
+  const [partnerCall, setPartnerCall] = useState<MediaConnection>();
 
   useEffect(() => {
     (async () => {
@@ -54,6 +56,10 @@ export default function MatePage() {
     socket.on("match-ended", () => {
       setPartnerPeerId(undefined);
       myPeer?.disconnect();
+      myCall?.close();
+      partnerCall?.close();
+      setMyCall(undefined);
+      setPartnerCall(undefined);
       setMyPeer(undefined);
     });
 
@@ -61,6 +67,10 @@ export default function MatePage() {
       setPartnerPeerId(undefined);
       socket.emit("end-match", partnerPeerId);
       myPeer?.disconnect();
+      myCall?.close();
+      partnerCall?.close();
+      setMyCall(undefined);
+      setPartnerCall(undefined);
       setMyPeer(undefined);
     };
   }, []);
@@ -68,13 +78,16 @@ export default function MatePage() {
   useEffect(() => {
     if (myPeer && myStream)
       myPeer.on("call", (call) => {
-        call.answer(myStream);
-        call.on("stream", (remoteStream) => {
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = remoteStream;
-            remoteVideoRef.current.play();
-          }
-        });
+        if (!partnerCall) {
+          setPartnerCall(call);
+          call.answer(myStream);
+          call.on("stream", (remoteStream) => {
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = remoteStream;
+              remoteVideoRef.current.play();
+            }
+          });
+        }
       });
   }, [myPeer, myStream]);
 
@@ -91,8 +104,9 @@ export default function MatePage() {
   }, [navigator]);
 
   useEffect(() => {
-    if (myPeer && partnerPeerId && myStream) {
+    if (myPeer && partnerPeerId && myStream && !myCall) {
       const call = myPeer.call(partnerPeerId, myStream);
+      setMyCall(call);
       call.on("stream", (remoteStream) => {
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = remoteStream;
