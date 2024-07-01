@@ -37,16 +37,16 @@ export default function MatePage() {
       if (!micPermission.granted) await requestMicrophonePermissionsAsync();
     })();
 
+    const peer = new Peer(socket.id || "", {
+      host: process.env.NODE_ENV === "production" ? "nasakh.app" : "localhost",
+      port: process.env.NODE_ENV === "production" ? 443 : 4000,
+      path: "/peerjs",
+    });
+    peer.on("open", () => {
+      setMyPeer(peer);
+    });
+
     socket.on("matched", (partnerSocketId) => {
-      const peer = new Peer(socket.id || "", {
-        host:
-          process.env.NODE_ENV === "production" ? "nasakh.app" : "localhost",
-        port: process.env.NODE_ENV === "production" ? 443 : 4000,
-        path: "/peerjs",
-      });
-      peer.on("open", (id) => {
-        setMyPeer(peer);
-      });
       setLoading(false);
       setPartnerPeerId(partnerSocketId);
     });
@@ -55,7 +55,6 @@ export default function MatePage() {
     });
     socket.on("match-ended", () => {
       setPartnerPeerId(undefined);
-      myPeer?.disconnect();
       myCall?.close();
       partnerCall?.close();
       setMyCall(undefined);
@@ -64,8 +63,8 @@ export default function MatePage() {
     });
 
     return () => {
-      setPartnerPeerId(undefined);
       socket.emit("end-match", partnerPeerId);
+      setPartnerPeerId(undefined);
       myPeer?.disconnect();
       myCall?.close();
       partnerCall?.close();
