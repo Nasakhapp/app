@@ -140,6 +140,8 @@ export default function MatePage() {
         poster="/assets/images/logo-small.png"
         ref={remoteVideoRef}
         style={{ flex: 1, maxWidth: "100vw" }}
+        autoPlay
+        playsInline
       />
       <video
         ref={localVideoRef}
@@ -152,6 +154,7 @@ export default function MatePage() {
         }}
         muted
         playsInline
+        autoPlay
       />
       <View
         position="absolute"
