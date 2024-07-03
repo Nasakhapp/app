@@ -29,6 +29,13 @@ export default function MatePage() {
   const [myCall, setMyCall] = useState<MediaConnection>();
   const [partnerCall, setPartnerCall] = useState<MediaConnection>();
 
+  const getStream = (remoteStream: MediaStream) => {
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play();
+    }
+  };
+
   useEffect(() => {
     (async () => {
       const cameraPermission = await getCameraPermissionsAsync();
@@ -62,11 +69,13 @@ export default function MatePage() {
     });
     socket.on("match-ended", () => {
       setPartnerPeerId(undefined);
+      myCall?.off("stream", getStream);
       myCall?.close();
       myCall?.peerConnection
         .getSenders()
         .forEach((sender) => sender.track?.stop());
       setMyCall(undefined);
+      partnerCall?.off("stream", getStream);
       partnerCall?.close();
       partnerCall?.peerConnection
         .getSenders()
@@ -77,11 +86,14 @@ export default function MatePage() {
     return () => {
       socket.emit("end-match", partnerPeerId);
       setPartnerPeerId(undefined);
+      myCall?.off("stream", getStream);
       myCall?.close();
       myCall?.peerConnection
         .getSenders()
         .forEach((sender) => sender.track?.stop());
       setMyCall(undefined);
+      partnerCall?.off("stream", getStream);
+
       partnerCall?.close();
       partnerCall?.peerConnection
         .getSenders()
@@ -104,12 +116,7 @@ export default function MatePage() {
   useEffect(() => {
     if (partnerCall && myStream) {
       partnerCall.answer(myStream);
-      partnerCall.on("stream", (remoteStream) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStream;
-          remoteVideoRef.current.play();
-        }
-      });
+      partnerCall.on("stream", getStream);
     }
   }, [partnerCall, myStream]);
 
@@ -133,13 +140,7 @@ export default function MatePage() {
   }, [myPeer, partnerPeerId, myStream]);
 
   useEffect(() => {
-    if (myCall)
-      myCall.on("stream", (remoteStream) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStream;
-          remoteVideoRef.current.play();
-        }
-      });
+    if (myCall) myCall.on("stream", getStream);
   }, [myCall]);
   return (
     <View display="flex" w="$full" h="$full" gap={4}>
