@@ -56,20 +56,31 @@ export default function MatePage() {
     socket.on("match-ended", () => {
       setPartnerPeerId(undefined);
       myCall?.close();
-      partnerCall?.close();
+      myCall?.peerConnection
+        .getSenders()
+        .forEach((sender) => sender.track?.stop());
       setMyCall(undefined);
+      partnerCall?.close();
+      partnerCall?.peerConnection
+        .getSenders()
+        .forEach((sender) => sender.track?.stop());
       setPartnerCall(undefined);
-      setMyPeer(undefined);
     });
 
     return () => {
       socket.emit("end-match", partnerPeerId);
       setPartnerPeerId(undefined);
       myCall?.close();
-      partnerCall?.close();
-      myPeer?.disconnect();
+      myCall?.peerConnection
+        .getSenders()
+        .forEach((sender) => sender.track?.stop());
       setMyCall(undefined);
+      partnerCall?.close();
+      partnerCall?.peerConnection
+        .getSenders()
+        .forEach((sender) => sender.track?.stop());
       setPartnerCall(undefined);
+      myPeer?.disconnect();
       setMyPeer(undefined);
     };
   }, []);
