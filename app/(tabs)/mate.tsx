@@ -41,6 +41,13 @@ export default function MatePage() {
       host: process.env.NODE_ENV === "production" ? "nasakh.app" : "localhost",
       port: process.env.NODE_ENV === "production" ? 443 : 4000,
       path: "/peerjs",
+      config: {
+        iceServers: [
+          {
+            urls: "stun:stun.l.google.com:19302",
+          },
+        ],
+      },
     });
     peer.on("open", () => {
       setMyPeer(peer);
