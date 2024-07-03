@@ -69,13 +69,14 @@ export default function MatePage() {
     });
     socket.on("match-ended", () => {
       setPartnerPeerId(undefined);
-      myCall?.off("stream", getStream);
+      myCall?.removeAllListeners();
       myCall?.close();
+
       myCall?.peerConnection
         .getSenders()
         .forEach((sender) => sender.track?.stop());
       setMyCall(undefined);
-      partnerCall?.off("stream", getStream);
+      partnerCall?.removeAllListeners();
       partnerCall?.close();
       partnerCall?.peerConnection
         .getSenders()
@@ -86,14 +87,13 @@ export default function MatePage() {
     return () => {
       socket.emit("end-match", partnerPeerId);
       setPartnerPeerId(undefined);
-      myCall?.off("stream", getStream);
+      myCall?.removeAllListeners();
       myCall?.close();
       myCall?.peerConnection
         .getSenders()
         .forEach((sender) => sender.track?.stop());
       setMyCall(undefined);
-      partnerCall?.off("stream", getStream);
-
+      partnerCall?.removeAllListeners();
       partnerCall?.close();
       partnerCall?.peerConnection
         .getSenders()
