@@ -139,8 +139,8 @@ export default function MatePage() {
   }, [myPeer, partnerPeerId, myStream]);
 
   useEffect(() => {
-    if (myCall) myCall.on("stream", getStream);
-  }, [myCall]);
+    if (myCall && partnerPeerId) myCall.on("stream", getStream);
+  }, [myCall, partnerPeerId]);
   return (
     <View display="flex" w="$full" h="$full" gap={4}>
       <Text
