@@ -48,6 +48,8 @@ export default function MatePage() {
       host: process.env.NODE_ENV === "production" ? "nasakh.app" : "localhost",
       port: process.env.NODE_ENV === "production" ? 443 : 4000,
       path: "/peerjs",
+      secure: true,
+      debug: 3,
       config: {
         iceServers: [
           {
