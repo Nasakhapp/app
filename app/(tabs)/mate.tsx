@@ -71,7 +71,6 @@ export default function MatePage() {
       setPartnerPeerId(undefined);
       myCall?.removeAllListeners();
       myCall?.close();
-
       myCall?.peerConnection
         .getSenders()
         .forEach((sender) => sender.track?.stop());
@@ -99,26 +98,26 @@ export default function MatePage() {
         .getSenders()
         .forEach((sender) => sender.track?.stop());
       setPartnerCall(undefined);
-      myPeer?.disconnect();
+      myPeer?.destroy();
       setMyPeer(undefined);
     };
   }, []);
 
   useEffect(() => {
-    if (myPeer && myStream)
+    if (myPeer)
       myPeer.on("call", (call) => {
         if (!partnerCall) {
           setPartnerCall(call);
         }
       });
-  }, [myPeer, myStream]);
+  }, [myPeer]);
 
   useEffect(() => {
-    if (partnerCall && myStream) {
+    if (partnerCall && partnerPeerId) {
       partnerCall.answer(myStream);
       partnerCall.on("stream", getStream);
     }
-  }, [partnerCall, myStream]);
+  }, [partnerCall, partnerPeerId]);
 
   useEffect(() => {
     navigator.mediaDevices
