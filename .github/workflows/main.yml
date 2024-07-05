@@ -25,10 +25,10 @@ jobs:
         run: yarn build:web
 
       - name: Send to server
-        uses: garygrossgarten/github-action-scp@release
+        uses: appleboy/scp-action@v0.1.7
         with:
-          local: ./dist/
-          remote: /root/nasakh-server/
+          source: ./dist/
+          target: /root/nasakh-server/
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASS }}
