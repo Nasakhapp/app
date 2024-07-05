@@ -47,7 +47,7 @@ export default function MatePage() {
     const peer = new Peer(socket.id || "", {
       host: process.env.NODE_ENV === "production" ? "nasakh.app" : "localhost",
       port: process.env.NODE_ENV === "production" ? 443 : 4000,
-      path: "/",
+      path: "/peerjs",
       secure: true,
       debug: 3,
       config: {
