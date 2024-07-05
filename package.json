@@ -9,7 +9,7 @@
     "web": "NODE_ENV=development expo start --web",
     "test": "jest --watchAll",
     "build:apk": "eas build -p android --profile preview",
-    "build:web": "NODE_ENV=production npx expo export -p web && npx workbox-cli generateSW workbox-config.js"
+    "build:web": "NODE_ENV=production npx expo export -p web"
   },
   "jest": {
     "preset": "jest-expo"
