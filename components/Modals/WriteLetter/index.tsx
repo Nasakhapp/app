@@ -30,6 +30,7 @@ export default function WriteLetterModal({
 }) {
   const [title, setTitle] = useState<string>();
   const [body, setBody] = useState<string>();
+  const [isSubmitting, setSubmitting] = useState<boolean>(false);
   const { user } = useContext(UserContext);
   return (
     <Modal
@@ -89,8 +90,10 @@ export default function WriteLetterModal({
         </ModalBody>
         <ModalFooter>
           <Button
+            isDisabled={isSubmitting}
             w={"$full"}
             onPress={() => {
+              setSubmitting(true);
               if (title?.trim() && body?.trim()) {
                 axiosInstance
                   .post(
@@ -99,6 +102,7 @@ export default function WriteLetterModal({
                     { headers: { Authorization: "Bearer " + user?.token } }
                   )
                   .then(({ data }) => {
+                    setSubmitting(false);
                     onClose();
                   });
               }
