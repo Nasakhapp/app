@@ -93,8 +93,8 @@ export default function WriteLetterModal({
             isDisabled={isSubmitting}
             w={"$full"}
             onPress={() => {
-              setSubmitting(true);
               if (title?.trim() && body?.trim()) {
+                setSubmitting(true);
                 axiosInstance
                   .post(
                     "/letter",
