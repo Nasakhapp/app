@@ -29,7 +29,7 @@ import { Stack, Tabs } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Updates from "expo-updates";
 import { useCallback, useEffect, useState } from "react";
-import { Platform } from "react-native";
+import { Platform, useWindowDimensions } from "react-native";
 import io from "socket.io-client";
 
 import LogoIcon from "@/assets/images/Nasakh.svg";
@@ -75,6 +75,7 @@ function Root() {
   const [isConnected, setConnected] = useState<boolean>(false);
   const { initDataRaw, initData } = useLaunchParams();
   const cloudStorage = useCloudStorage();
+
   const [activeRequest, setActiveRequest] = useState<{
     request?: IRequest;
     role?: "NAJI" | "NASAKH";
@@ -217,7 +218,12 @@ function Root() {
               <TonConnectUIProvider
                 manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
               >
-                <View width={"100%"} height="100%" onLayout={onLayoutRootView}>
+                <View
+                  width={"100%"}
+                  overflow="hidden"
+                  height="100%"
+                  onLayout={onLayoutRootView}
+                >
                   <Stack
                     screenOptions={{
                       headerTitle: () => {

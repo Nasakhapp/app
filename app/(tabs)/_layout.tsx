@@ -3,8 +3,11 @@ import { Tabs } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Drawer } from "expo-router/drawer";
 import { DrawerActions } from "@react-navigation/native";
+import { useWindowDimensions } from "react-native";
 
 export default function TabLayout() {
+  const { width } = useWindowDimensions();
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer
