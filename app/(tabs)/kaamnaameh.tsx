@@ -109,8 +109,10 @@ const Letters = (props: { mode: "PUBLIC" | "PRIVATE" }) => {
   return (
     <View display="flex" flex={1}>
       <PullToRefresh
-        pullingContent={<Spinner style={{ marginTop: 24 }} />}
-        refreshingContent={<Spinner style={{ marginTop: 24 }} />}
+        pullingContent={<Spinner color={"#f7941d"} style={{ marginTop: 24 }} />}
+        refreshingContent={
+          <Spinner color={"#f7941d"} style={{ marginTop: 24 }} />
+        }
         onRefresh={() => getLetters(0)}
       >
         <ScrollView
