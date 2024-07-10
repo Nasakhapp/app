@@ -102,8 +102,10 @@ export default function WriteLetterModal({
                     { headers: { Authorization: "Bearer " + user?.token } }
                   )
                   .then(({ data }) => {
-                    setSubmitting(false);
                     onClose();
+                  })
+                  .finally(() => {
+                    setSubmitting(false);
                   });
               }
             }}
