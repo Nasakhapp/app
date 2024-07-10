@@ -24,7 +24,7 @@ import {
 import { useFocusEffect, useNavigation } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
 
-export default function WalletPage() {
+export default function GhollakPage() {
   const walletAddress = useTonAddress();
   const { user, setUser } = useContext(UserContext);
   const [wallet, setWallet] = useState<{

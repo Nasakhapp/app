@@ -19,7 +19,7 @@ import {
 
 import { Ionicons } from "@expo/vector-icons";
 
-export default function MatePage() {
+export default function HamKaamPage() {
   const [myPeer, setMyPeer] = useState<Peer>();
   const [partnerPeerId, setPartnerPeerId] = useState<string>();
   const localVideoRef = useRef<HTMLVideoElement>(null);

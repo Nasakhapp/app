@@ -1,66 +1,84 @@
 import { Text } from "@gluestack-ui/themed";
 import { Tabs } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { Drawer } from "expo-router/drawer";
+import { DrawerActions } from "@react-navigation/native";
 
 export default function TabLayout() {
   return (
-    <Tabs>
-      <Tabs.Screen
-        options={{
-          headerShown: false,
-          tabBarIcon: (props) => (
-            <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
-              دکه
-            </Text>
-          ),
-          tabBarIconStyle: { width: "100%" },
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Drawer
+        screenOptions={{
+          drawerPosition: "right",
+          drawerActiveBackgroundColor: "#F7941D55",
+          drawerStyle: { backgroundColor: "rgb(242, 242, 242)" },
+        }}
+      >
+        <Drawer.Screen
+          options={{
+            headerShown: false,
+            drawerLabel: () => (
+              <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
+                رفع نسخی
+              </Text>
+            ),
+          }}
+          name="index"
+        />
 
-          tabBarShowLabel: false,
-        }}
-        name="shop"
-      />
+        <Drawer.Screen
+          options={{
+            headerShown: false,
+            drawerLabel: (props) => (
+              <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
+                هم‌کام
+              </Text>
+            ),
 
-      <Tabs.Screen
-        options={{
-          headerShown: false,
-          tabBarIcon: (props) => (
-            <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
-              پول مفت
-            </Text>
-          ),
-          tabBarIconStyle: { width: "100%" },
+            unmountOnBlur: true,
+          }}
+          name="hamkaam"
+        />
 
-          tabBarShowLabel: false,
-          unmountOnBlur: true,
-        }}
-        name="wallet"
-      />
-      <Tabs.Screen
-        options={{
-          headerShown: false,
-          tabBarIcon: (props) => (
-            <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
-              هم‌کام
-            </Text>
-          ),
-          tabBarIconStyle: { width: "100%" },
-          tabBarShowLabel: false,
-          unmountOnBlur: true,
-        }}
-        name="mate"
-      />
-      <Tabs.Screen
-        options={{
-          headerShown: false,
-          tabBarIcon: () => (
-            <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
-              رفع نسخی
-            </Text>
-          ),
-          tabBarIconStyle: { width: "100%" },
-          tabBarShowLabel: false,
-        }}
-        name="index"
-      />
-    </Tabs>
+        <Drawer.Screen
+          options={{
+            headerShown: false,
+            drawerLabel: (props) => (
+              <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
+                کام‌نامه
+              </Text>
+            ),
+
+            unmountOnBlur: true,
+          }}
+          name="kaamnaameh"
+        />
+
+        <Drawer.Screen
+          options={{
+            headerShown: false,
+            drawerLabel: (props) => (
+              <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
+                قلک
+              </Text>
+            ),
+
+            unmountOnBlur: true,
+          }}
+          name="ghollak"
+        />
+        <Drawer.Screen
+          options={{
+            headerShown: false,
+            drawerLabel: (props) => (
+              <Text fontFamily="Vazirmatn_700Bold" fontSize={14}>
+                دکه
+              </Text>
+            ),
+          }}
+          name="dakke"
+        />
+      </Drawer>
+    </GestureHandlerRootView>
   );
 }

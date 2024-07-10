@@ -55,6 +55,7 @@ import {
 import { AxiosHeaders } from "axios";
 
 import "./mockEnv";
+import { DrawerToggleButton } from "@react-navigation/drawer";
 
 function Root() {
   const [fontsLoaded, fontError] = useFonts({
@@ -79,84 +80,53 @@ function Root() {
     role?: "NAJI" | "NASAKH";
   }>({});
 
-  function Auth(token: string | null) {
-    if (!token) {
-      axiosInstance
-        .post(
-          "/token",
-          {},
-          {
-            headers: {
-              "telegram-data": initDataRaw,
-            },
-          }
-        )
-        .then((data) => {
-          const user = data.data;
-          process.env.NODE_ENV === "development"
-            ? AsyncStorage.setItem("token", user.token)
-            : cloudStorage.set("token", user.token);
-          setUser(user);
-          if (data.data.UserAsNajiRequests.length > 0) {
-            setActiveRequest({
-              request: data.data.UserAsNajiRequests?.[0],
-              role: "NAJI",
-            });
-          }
-          if (data.data.UserAsNasakhRequests.length > 0) {
-            setActiveRequest({
-              request: data.data.UserAsNasakhRequests?.[0],
-              role: "NASAKH",
-            });
-          }
-        });
-    } else {
-      axiosInstance
-        .get("/me", {
-          headers: { Authorization: "Bearer " + token },
-        })
-        .then((data) => {
-          setUser({ ...data.data, token });
-          if (data.data.UserAsNajiRequests.length > 0) {
-            setActiveRequest({
-              request: data.data.UserAsNajiRequests?.[0],
-              role: "NAJI",
-            });
-          }
-          if (data.data.UserAsNasakhRequests.length > 0) {
-            setActiveRequest({
-              request: data.data.UserAsNasakhRequests?.[0],
-              role: "NASAKH",
-            });
-          }
-          if (
-            initData?.chat?.id &&
-            (!data.data.telegramChatId ||
-              data.data?.telegramChatId !== initData.chat.id)
-          ) {
-            axiosInstance.put(
-              "/me/telegram-chat-id",
-              { telegramChatId: initData.chat.id },
-              { headers: { Authorization: "Bearer " + token } }
-            );
-          }
-        });
-    }
+  function Auth() {
+    axiosInstance
+      .post(
+        "/token",
+        {},
+        {
+          headers: {
+            "telegram-data": initDataRaw,
+          },
+        }
+      )
+      .then((data) => {
+        const user = data.data;
+        process.env.NODE_ENV === "development"
+          ? AsyncStorage.setItem("token", user.token)
+          : cloudStorage.set("token", user.token);
+        setUser(user);
+        if (user.UserAsNajiRequests.length > 0) {
+          setActiveRequest({
+            request: user.UserAsNajiRequests?.[0],
+            role: "NAJI",
+          });
+        }
+        if (user.UserAsNasakhRequests.length > 0) {
+          setActiveRequest({
+            request: user.UserAsNasakhRequests?.[0],
+            role: "NASAKH",
+          });
+        }
+        if (
+          initData?.chat?.id &&
+          (!user.telegramChatId || user?.telegramChatId !== initData.chat.id)
+        ) {
+          axiosInstance.put(
+            "/me/telegram-chat-id",
+            { telegramChatId: initData.chat.id },
+            { headers: { Authorization: "Bearer " + user.token } }
+          );
+        }
+      });
   }
 
   useEffect(() => {
     Location.requestForegroundPermissionsAsync().then((data) => {
       setLocationPermission(data.status === "granted");
     });
-    if (process.env.NODE_ENV === "development") {
-      AsyncStorage.getItem("token").then((token) => {
-        Auth(token);
-      });
-    } else {
-      cloudStorage.get("token").then((token) => {
-        Auth(token);
-      });
-    }
+    Auth();
     return () => {
       socket.disconnect();
       socket.removeAllListeners();
@@ -247,7 +217,7 @@ function Root() {
               <TonConnectUIProvider
                 manifestUrl={`${window.location.origin}/tonconnect-manifest.json`}
               >
-                <View width="100%" height="100%" onLayout={onLayoutRootView}>
+                <View width={"100%"} height="100%" onLayout={onLayoutRootView}>
                   <Stack
                     screenOptions={{
                       headerTitle: () => {
@@ -268,13 +238,10 @@ function Root() {
                           display="flex"
                           flexDirection="row-reverse"
                           alignItems="center"
-                          gap={16}
                         >
-                          <Text
-                            marginRight={Platform.OS === "web" ? 16 : 0}
-                            fontFamily="Vazirmatn_700Bold"
-                          >
-                            نام: {user.name}
+                          <DrawerToggleButton />
+                          <Text color="$black" fontFamily="Vazirmatn_700Bold">
+                            {user.name}
                           </Text>
                         </View>
                       ),

@@ -29,7 +29,7 @@ if (process.env.NODE_ENV === "development") {
       [
         "user",
         JSON.stringify({
-          id: Math.random() * 89999999 + 10000000,
+          id: 83743934,
           first_name: "Andrew",
           last_name: "Rogue",
           username: "rogue",
