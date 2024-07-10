@@ -17,7 +17,9 @@ import {
   ModalFooter,
   ModalHeader,
   Pressable,
+  RefreshControl,
   ScrollView,
+  Spinner,
   Text,
   View,
 } from "@gluestack-ui/themed";
@@ -32,6 +34,7 @@ import WriteLetterModal from "@/components/Modals/WriteLetter";
 import { UserContext } from "@/components/Contexts/Contexts";
 import isCloseToBottom from "@/lib/nearEnd";
 import ReadLetterModal from "@/components/Modals/ReadLetter";
+import PullToRefresh from "react-simple-pull-to-refresh";
 
 const AddLetter = ({
   onCloseEvent,
@@ -82,7 +85,7 @@ const Letters = (props: { mode: "PUBLIC" | "PRIVATE" }) => {
   const gridRef = useRef<Grid>();
 
   const getLetters = (skip: number) => {
-    axiosInstance
+    return axiosInstance
       .get(`/letter?skip=${skip}&mode=${props.mode}`, {
         headers: { Authorization: "Bearer " + user?.token },
       })
@@ -105,45 +108,53 @@ const Letters = (props: { mode: "PUBLIC" | "PRIVATE" }) => {
 
   return (
     <View display="flex" flex={1}>
-      <ScrollView
-        onScroll={(e) => {
-          if (isCloseToBottom(e.nativeEvent)) {
-            getLetters(letters.length);
-          }
-        }}
-        flex={1}
-        overflow="scroll"
-        padding={16}
+      <PullToRefresh
+        pullingContent={<Spinner style={{ marginTop: 24 }} />}
+        refreshingContent={<Spinner style={{ marginTop: 24 }} />}
+        onRefresh={() => getLetters(0)}
       >
-        <StackGrid
-          gridRef={(grid) => {
-            gridRef.current = grid;
+        <ScrollView
+          onScroll={(e) => {
+            if (isCloseToBottom(e.nativeEvent)) {
+              getLetters(letters.length);
+            }
           }}
-          rtl
-          gutterHeight={16}
-          gutterWidth={16}
-          columnWidth={"40%"}
+          flex={1}
+          overflow="scroll"
+          padding={16}
         >
-          {letters?.map((item: any) => (
-            <Pressable
-              onPress={() => setLetter({ title: item.title, body: item.body })}
-            >
-              <Card gap={8} maxHeight={200} width={"$full"} key={item.id}>
-                <Text fontFamily="Vazirmatn_700Bold">{item.title}</Text>
-                <Divider />
-                <Text
-                  numberOfLines={4}
-                  ellipsizeMode="tail"
-                  fontFamily="Vazirmatn_400Regular"
-                  fontSize={"$xs"}
-                >
-                  {item.body}
-                </Text>
-              </Card>
-            </Pressable>
-          ))}
-        </StackGrid>
-      </ScrollView>
+          <StackGrid
+            gridRef={(grid) => {
+              gridRef.current = grid;
+            }}
+            rtl
+            gutterHeight={16}
+            gutterWidth={16}
+            columnWidth={"40%"}
+          >
+            {letters?.map((item: any) => (
+              <Pressable
+                onPress={() =>
+                  setLetter({ title: item.title, body: item.body })
+                }
+              >
+                <Card gap={8} maxHeight={200} width={"$full"} key={item.id}>
+                  <Text fontFamily="Vazirmatn_700Bold">{item.title}</Text>
+                  <Divider />
+                  <Text
+                    numberOfLines={4}
+                    ellipsizeMode="tail"
+                    fontFamily="Vazirmatn_400Regular"
+                    fontSize={"$xs"}
+                  >
+                    {item.body}
+                  </Text>
+                </Card>
+              </Pressable>
+            ))}
+          </StackGrid>
+        </ScrollView>
+      </PullToRefresh>
       <AddLetter
         mode={props.mode}
         onCloseEvent={() => {
@@ -186,7 +197,6 @@ export default function KaamNaamehPage() {
 
   return (
     <TabView
-      lazy
       layoutDirection={"rtl"}
       renderTabBar={(props) => (
         <TabBar
